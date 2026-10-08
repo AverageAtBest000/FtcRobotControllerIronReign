@@ -69,14 +69,15 @@ public class HiveTracker{
         double yZ = Math.cos(ry) * Math.sin(rx);
 
         AprilTagOrientation orientation = getOrientation(yY, yZ);
-
         HiveState observedState = getObservedState( orientation, tag);
 
+        // If the current observedState does not match the candidate
         if(observedState != candidateState){
             // We have a new candiate state - restart the timer
             candidateState = observedState;
             startTime_ms = timeNow_ms;
         }  
+        // If we have passed the timeThreshold_ms, candidateState is confirmed stable
         if(timeNow_ms - startTime_ms >= timeThreshold_ms){
             // candidate state is stable - set hiveState to candidate
             hiveState = candidateState;
@@ -88,15 +89,13 @@ public class HiveTracker{
     }
 
     public HiveState getObservedState(AprilTagOrientation orientation, LLResultTypes.FiducialResult tag){
-        HiveState observedState = null;
         if(orientation == getInitialOrientation(tag.getFiducialId())){
-            if(isRedAlliance) observedState = HiveState.AUDIENCE_SIDE_UP;
-            else observedState = HiveState.REAR_SIDE_UP;
-        }else{
-            if(isRedAlliance) observedState = HiveState.REAR_SIDE_UP;
-            else observedState = HiveState.AUDIENCE_SIDE_UP;
+            return (isRedAlliance)? observedState = HiveState.AUDIENCE_SIDE_UP : HiveState.REAR_SIDE_UP; 
+        }else if( orientation == HiveState.UNKNOWN){
+            return HiveState.UNKNOWN;
         }
-        return observedState;
+        return (isRedAlliance) ? HiveState.REAR_SIDE_UP : HiveState.AUDIENCE_SIDE_UP;
+              
     }
 
 

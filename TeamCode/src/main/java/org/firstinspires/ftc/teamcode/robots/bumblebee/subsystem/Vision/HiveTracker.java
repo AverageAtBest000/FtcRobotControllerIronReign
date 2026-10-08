@@ -50,22 +50,21 @@ public class HiveTracker{
 
     // ==================== UPDATE HIVE POSITION ====================
 
-    /*
+    /**
      * Updates hive position based on a fresh frame. 
      * @note Currently uses only the first valid FiducialResult. Will require testing   
      */
     public void update( List<LLResultTypes.FiducialResult> results ){
-        // Set candidate to UNKNOWN and restart timer  - no state is visible 
+        long timeNow_ms = System.nanoTime() / 1_000_000;
+
+        // Set candidate to UNKNOWN and restart timer  - no state is visible
         if(results.isEmpty()){
             startTime_ms = timeNow_ms;
             candidateState = HiveState.UNKNOWN;
             return;
-        } 
+        }
 
         LLResultTypes.FiducialResult tag = results.get(0);
-        Pose3D cameraToTag = tag.getTargetPoseCameraSpace();
-
-        long timeNow_ms = System.nanoTime() / 1_000_000;
 
         double rx = tag.getTargetPoseCameraSpace().getOrientation().getRoll(AngleUnit.RADIANS);
         double ry = tag.getTargetPoseCameraSpace().getOrientation().getPitch(AngleUnit.RADIANS);
@@ -100,10 +99,9 @@ public class HiveTracker{
      * Apply transform considering camera tilt to determine direction of the tags Y axis 
      *
      * @note A tag is "upright" when the Y axis points down 
-     * @return AprilTagOrientation based on y axis
+     * @return AprilTagOrientation based on y-axis
      */
-
-    public AprilTagOrientation getOrientation(double yY, double yZ){
+    private AprilTagOrientation getOrientation(double yY, double yZ){
       if(-Math.cos(Math.toRadians(vision.tiltState.degrees)) * yY + Math.sin(Math.toRadians(vision.tiltState.degrees)) * yZ <= upThreshold){
         return AprilTagOrientation.UP;
       }else if(-Math.cos(Math.toRadians(vision.tiltState.degrees)) * yY + Math.sin(Math.toRadians(vision.tiltState.degrees)) * yZ >= downThreshold){
@@ -115,15 +113,14 @@ public class HiveTracker{
 
     
     /**
-     * Calculate the current HiveState for stability checks in update() 
-     *
+     * Calculate the current HiveState for stability checks in update()
      * @return HiveState based on current AprilTagOrientation   
      */
     
-    public HiveState getObservedState(AprilTagOrientation orientation, LLResultTypes.FiducialResult tag){
+    private HiveState getObservedState(AprilTagOrientation orientation, LLResultTypes.FiducialResult tag){
       if(orientation == getInitialOrientation(tag.getFiducialId())){
-        return (isRedAlliance)? observedState = HiveState.AUDIENCE_SIDE_UP : HiveState.REAR_SIDE_UP; 
-      }else if( orientation == HiveState.UNKNOWN){
+        return (isRedAlliance)? HiveState.AUDIENCE_SIDE_UP : HiveState.REAR_SIDE_UP;
+      }else if( orientation == AprilTagOrientation.UNKNOWN){
         return HiveState.UNKNOWN;
       }
       return (isRedAlliance) ? HiveState.REAR_SIDE_UP : HiveState.AUDIENCE_SIDE_UP;
@@ -131,11 +128,11 @@ public class HiveTracker{
 
     
     /**
-     * Check what orientation a tag is initlally in 
+     * Check what orientation a tag is initially in
      *
-     * @return inital tag orientation 
+     * @return initial tag orientation
      */
-    public AprilTagOrientation getInitialOrientation( int id){
+    private AprilTagOrientation getInitialOrientation( int id){
       return (id >= 34 && id <= 37 || id >= 42 && id <= 45) ? AprilTagOrientation.UP : AprilTagOrientation.DOWN;
     }
 

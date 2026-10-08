@@ -39,6 +39,7 @@ public class HiveTracker{
     public Vision vision; 
     
 
+     // ==================== CONSTRUCTOR ====================
     public HiveTracker(boolean isRedAlliance, Vision vision){
         hiveState = (isRedAlliance) ?  HiveState.AUDIENCE_SIDE_UP: HiveState.REAR_SIDE_UP;
         candidateState = HiveState.UNKNOWN;
@@ -54,7 +55,12 @@ public class HiveTracker{
      * @note Currently uses only the first valid FiducialResult. Will require testing   
      */
     public void update( List<LLResultTypes.FiducialResult> results ){
-        if(results.isEmpty()) return;
+        // Set candidate to UNKNOWN and restart timer  - no state is visible 
+        if(results.isEmpty()){
+            startTime_ms = timeNow_ms;
+            candidateState = HiveState.UNKNOWN;
+            return;
+        } 
 
         LLResultTypes.FiducialResult tag = results.get(0);
         Pose3D cameraToTag = tag.getTargetPoseCameraSpace();
@@ -88,38 +94,52 @@ public class HiveTracker{
 
     }
 
-    public HiveState getObservedState(AprilTagOrientation orientation, LLResultTypes.FiducialResult tag){
-        if(orientation == getInitialOrientation(tag.getFiducialId())){
-            return (isRedAlliance)? observedState = HiveState.AUDIENCE_SIDE_UP : HiveState.REAR_SIDE_UP; 
-        }else if( orientation == HiveState.UNKNOWN){
-            return HiveState.UNKNOWN;
-        }
-        return (isRedAlliance) ? HiveState.REAR_SIDE_UP : HiveState.AUDIENCE_SIDE_UP;
-              
-    }
-
-
-    public AprilTagOrientation getInitialOrientation( int id){
-        return (id >= 34 && id <= 37 || id >= 42 && id <= 45) ? AprilTagOrientation.UP : AprilTagOrientation.DOWN;
-    }
-
+    // ==================== APRILTAG CHECKS   ====================
+    
+    /**
+     * Apply transform considering camera tilt to determine direction of the tags Y axis 
+     *
+     * @note A tag is "upright" when the Y axis points down 
+     * @return AprilTagOrientation based on y axis
+     */
 
     public AprilTagOrientation getOrientation(double yY, double yZ){
-        if(-Math.cos(Math.toRadians(vision.tiltState.degrees)) * yY + Math.sin(Math.toRadians(vision.tiltState.degrees)) * yZ <= upThreshold){
-            return AprilTagOrientation.UP;
-        }else if(-Math.cos(Math.toRadians(vision.tiltState.degrees)) * yY + Math.sin(Math.toRadians(vision.tiltState.degrees)) * yZ >= downThreshold){
-            return AprilTagOrientation.DOWN;
-        }
+      if(-Math.cos(Math.toRadians(vision.tiltState.degrees)) * yY + Math.sin(Math.toRadians(vision.tiltState.degrees)) * yZ <= upThreshold){
+        return AprilTagOrientation.UP;
+      }else if(-Math.cos(Math.toRadians(vision.tiltState.degrees)) * yY + Math.sin(Math.toRadians(vision.tiltState.degrees)) * yZ >= downThreshold){
+        return AprilTagOrientation.DOWN;
+      }
 
-        return AprilTagOrientation.UNKNOWN;
+      return AprilTagOrientation.UNKNOWN;
     }
 
+    
+    /**
+     * Calculate the current HiveState for stability checks in update() 
+     *
+     * @return HiveState based on current AprilTagOrientation   
+     */
+    
+    public HiveState getObservedState(AprilTagOrientation orientation, LLResultTypes.FiducialResult tag){
+      if(orientation == getInitialOrientation(tag.getFiducialId())){
+        return (isRedAlliance)? observedState = HiveState.AUDIENCE_SIDE_UP : HiveState.REAR_SIDE_UP; 
+      }else if( orientation == HiveState.UNKNOWN){
+        return HiveState.UNKNOWN;
+      }
+      return (isRedAlliance) ? HiveState.REAR_SIDE_UP : HiveState.AUDIENCE_SIDE_UP;
+    }
 
-    // ==================== APRILTAG CHECKS   ====================
+    
+    /**
+     * Check what orientation a tag is initlally in 
+     *
+     * @return inital tag orientation 
+     */
+    public AprilTagOrientation getInitialOrientation( int id){
+      return (id >= 34 && id <= 37 || id >= 42 && id <= 45) ? AprilTagOrientation.UP : AprilTagOrientation.DOWN;
+    }
 
     /**
-     * Check if an AprilTag can be used for blue alliance autoalign 
-     *
      * @return true if AprilTag belongs to the blue hive, false otherwise  
      */
     public static boolean isBlueTag(int id){
@@ -127,8 +147,6 @@ public class HiveTracker{
     }
 
    /**
-    * Check if an AprilTag can be used for red alliance autoalign 
-    *
     * @return true if AprilTag belongs to the red hive, false otherwise  
     */
     public static boolean isRedTag(int id){

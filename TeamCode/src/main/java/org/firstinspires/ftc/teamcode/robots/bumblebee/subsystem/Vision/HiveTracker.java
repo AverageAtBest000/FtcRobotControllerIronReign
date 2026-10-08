@@ -32,7 +32,7 @@ public class HiveTracker{
     private enum AprilTagOrientation{
       UP,
       DOWN,
-        UNKNOWN
+      UNKNOWN
     }
 
     // ==================== VISION TILT ====================
@@ -61,33 +61,29 @@ public class HiveTracker{
 
         long timeNow_ms = System.nanoTime() / 1_000_000;
 
-        if(hiveState == candidateState && timeNow_ms - startTime_ms >= timeThreshold_ms){
+        double rx = tag.getTargetPoseCameraSpace().getOrientation().getRoll(AngleUnit.RADIANS);
+        double ry = tag.getTargetPoseCameraSpace().getOrientation().getPitch(AngleUnit.RADIANS);
+        double rz = tag.getTargetPoseCameraSpace().getOrientation().getYaw(AngleUnit.RADIANS);
 
-            double rx = tag.getTargetPoseCameraSpace().getOrientation().getRoll(AngleUnit.RADIANS);
-            double ry = tag.getTargetPoseCameraSpace().getOrientation().getPitch(AngleUnit.RADIANS);
-            double rz = tag.getTargetPoseCameraSpace().getOrientation().getYaw(AngleUnit.RADIANS);
+        double yY = Math.sin(rz) * Math.sin(ry) * Math.sin(rx) + Math.cos(rz) * Math.cos(rx);
+        double yZ = Math.cos(ry) * Math.sin(rx);
 
-            double yY = Math.sin(rz) * Math.sin(ry) * Math.sin(rx) + Math.cos(rz) * Math.cos(rx);
-            double yZ = Math.cos(ry) * Math.sin(rx);
+        AprilTagOrientation orientation = getOrientation(yY, yZ);
 
-            AprilTagOrientation orientation = getOrientation(yY, yZ);
+        HiveState observedState = getObservedState( orientation, tag);
 
-            HiveState observedState = getObservedState( orientation, tag);
-
-            if(observedState != candidateState){
-                // We have a new candiate state - restart the timer
-                candidateState = observedState;
-                startTime_ms = timeNow_ms;
-            } else {
-                // candidate state is stable - set hiveState to candidate
-                hiveState = candidateState;
-            }
+        if(observedState != candidateState){
+            // We have a new candiate state - restart the timer
+            candidateState = observedState;
+            startTime_ms = timeNow_ms;
+        }  
+        if(timeNow_ms - startTime_ms >= timeThreshold_ms){
+            // candidate state is stable - set hiveState to candidate
+            hiveState = candidateState;
         }else{
-          // If hiveState is not stable, change state to UNKNOWN
-          candidateState = hiveState;
-          hiveState = HiveState.UNKNOWN;
+            hiveState = HiveState.UNKNOWN;
         }
-        
+
 
     }
 

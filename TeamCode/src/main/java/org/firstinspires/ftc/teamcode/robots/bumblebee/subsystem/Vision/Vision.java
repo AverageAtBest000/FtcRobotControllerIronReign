@@ -9,11 +9,7 @@ import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
-import org.firstinspires.ftc.robotcore.external.navigation.Position;
-import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.teamcode.robots.bumblebee.subsystem.Subsystem;
 import org.firstinspires.ftc.teamcode.robots.lebot2.util.LazyServo;
 import org.firstinspires.ftc.teamcode.robots.lebot2.util.LimelightStream;
@@ -23,7 +19,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set; 
 
 
 @Config(value = "Bumblebee_Vision")
@@ -48,6 +43,8 @@ public class Vision implements Subsystem {
     public static int tiltDownTicks = 0;
     private static final double tiltDownDegrees = 0.0;
     private static final double tiltUpDegrees = 0.0;
+    public static long timeToSettle_ms = 500L;
+    private long switchRequested_ms = 0L;
     public enum TiltState{
       TILT_UP(tiltUpTicks, tiltUpDegrees),
       TILT_DOWN(tiltDownTicks, tiltDownDegrees),
@@ -63,80 +60,24 @@ public class Vision implements Subsystem {
     }
 
     public TiltState tiltState = TiltState.TILT_UP;
-
+    private boolean tiltPending = false;
     // ==================== HIVE STATES ====================
-    private HiveTracker redHive = new HiveTracker(true, this);
-    private HiveTracker blueHive = new HiveTracker(false, this);
+    private final HiveTracker redHive = new HiveTracker(true, this);
+    private final HiveTracker blueHive = new HiveTracker(false, this);
 
-    private List<LLResultTypes.FiducialResult> redFiducials = new ArrayList<>();
-    private List<LLResultTypes.FiducialResult> blueFiducials = new ArrayList<>();
+    private final List<LLResultTypes.FiducialResult> redFiducials = new ArrayList<>();
+    private final List<LLResultTypes.FiducialResult> blueFiducials = new ArrayList<>();
 
     // ==================== APRILTAG POSES ====================
     HashMap<Integer, Pose3D> RED_TAGS = new HashMap<>();
     HashMap<Integer, Pose3D> BLUE_TAGS = new HashMap<>();
 
-    {
-        RED_TAGS.put(30, new Pose3D(
-                new Position(DistanceUnit.METER, 0.0, 0.0, 0.0, 0L),
-                new YawPitchRollAngles(AngleUnit.DEGREES, 0.0, 0.0, 0.0, 0L)));
-        RED_TAGS.put(31, new Pose3D(
-                new Position(DistanceUnit.METER, 0.0, 0.0, 0.0, 0L),
-                new YawPitchRollAngles(AngleUnit.DEGREES, 0.0, 0.0, 0.0, 0L)));
-        RED_TAGS.put(32, new Pose3D(
-                new Position(DistanceUnit.METER, 0.0, 0.0, 0.0, 0L),
-                new YawPitchRollAngles(AngleUnit.DEGREES, 0.0, 0.0, 0.0, 0L)));
-        RED_TAGS.put(33, new Pose3D(
-                new Position(DistanceUnit.METER, 0.0, 0.0, 0.0, 0L),
-                new YawPitchRollAngles(AngleUnit.DEGREES, 0.0, 0.0, 0.0, 0L)));
-        RED_TAGS.put(34, new Pose3D(
-                new Position(DistanceUnit.METER, 0.0, 0.0, 0.0, 0L),
-                new YawPitchRollAngles(AngleUnit.DEGREES, 0.0, 0.0, 0.0, 0L)));
-        RED_TAGS.put(35, new Pose3D(
-                new Position(DistanceUnit.METER, 0.0, 0.0, 0.0, 0L),
-                new YawPitchRollAngles(AngleUnit.DEGREES, 0.0, 0.0, 0.0, 0L)));
-        RED_TAGS.put(36, new Pose3D(
-                new Position(DistanceUnit.METER, 0.0, 0.0, 0.0, 0L),
-                new YawPitchRollAngles(AngleUnit.DEGREES, 0.0, 0.0, 0.0, 0L)));
-        RED_TAGS.put(37, new Pose3D(
-                new Position(DistanceUnit.METER, 0.0, 0.0, 0.0, 0L),
-                new YawPitchRollAngles(AngleUnit.DEGREES, 0.0, 0.0, 0.0, 0L)));
-
-        BLUE_TAGS.put(38, new Pose3D(
-                new Position(DistanceUnit.METER, 0.0, 0.0, 0.0, 0L),
-                new YawPitchRollAngles(AngleUnit.DEGREES, 0.0, 0.0, 0.0, 0L)));
-        BLUE_TAGS.put(39, new Pose3D(
-                new Position(DistanceUnit.METER, 0.0, 0.0, 0.0, 0L),
-                new YawPitchRollAngles(AngleUnit.DEGREES, 0.0, 0.0, 0.0, 0L)));
-        BLUE_TAGS.put(40, new Pose3D(
-                new Position(DistanceUnit.METER, 0.0, 0.0, 0.0, 0L),
-                new YawPitchRollAngles(AngleUnit.DEGREES, 0.0, 0.0, 0.0, 0L)));
-        BLUE_TAGS.put(41, new Pose3D(
-                new Position(DistanceUnit.METER, 0.0, 0.0, 0.0, 0L),
-                new YawPitchRollAngles(AngleUnit.DEGREES, 0.0, 0.0, 0.0, 0L)));
-        BLUE_TAGS.put(42, new Pose3D(
-                new Position(DistanceUnit.METER, 0.0, 0.0, 0.0, 0L),
-                new YawPitchRollAngles(AngleUnit.DEGREES, 0.0, 0.0, 0.0, 0L)));
-        BLUE_TAGS.put(43, new Pose3D(
-                new Position(DistanceUnit.METER, 0.0, 0.0, 0.0, 0L),
-                new YawPitchRollAngles(AngleUnit.DEGREES, 0.0, 0.0, 0.0, 0L)));
-        BLUE_TAGS.put(44, new Pose3D(
-                new Position(DistanceUnit.METER, 0.0, 0.0, 0.0, 0L),
-                new YawPitchRollAngles(AngleUnit.DEGREES, 0.0, 0.0, 0.0, 0L)));
-        BLUE_TAGS.put(45, new Pose3D(
-                new Position(DistanceUnit.METER, 0.0, 0.0, 0.0, 0L),
-                new YawPitchRollAngles(AngleUnit.DEGREES, 0.0, 0.0, 0.0, 0L)));
-    }
-
     // ==================== LOCALIZATION VARIABLES ====================
     private double tx = 0; 
     private double ty = 0; 
-    private double ta = 0; 
-
-    private double distanceToGoal = 0;
-
+    private double ta = 0;
     private boolean hasValidTarget = false;
     private boolean hasBotPose = false;
-
     private Pose3D mt2Pose = null;
     boolean hasMT2Pose = false;
     private double mt2X = 0, mt2Y = 0, mt2Heading = 0;
@@ -147,16 +88,24 @@ public class Vision implements Subsystem {
     private double lastTimestamp = 0.0;
 
     // ==================== VISION PIPELINES ====================
-    public enum Pipeline{
+    public static int localizingPipeline = 1;
+    public static int pollenTrackingPipeline = 2;
+    public static int dummyPipeline = 3;
+
+    public static enum Pipeline{
         
-        POLLEN(1),
-        APRILTAG(2);
+        POLLEN_TRACKING(pollenTrackingPipeline),
+        LOCALIZING(localizingPipeline),
+        DUMMY(dummyPipeline);
 
         public final int id;
         Pipeline(int id){this.id = id;}
     }
 
-    Pipeline pipeline = Pipeline.APRILTAG;
+    // Ignore frames until the initial servo move and pipeline switch complete.
+    private Pipeline pipeline = Pipeline.DUMMY;
+    private Pipeline requestedPipeline;
+    private boolean pipelineRequested;
 
     // ==================== DASHBOARD ====================
     private LimelightStream limelightStream = null;
@@ -169,6 +118,7 @@ public class Vision implements Subsystem {
         limeLight  = hardwareMap.get(Limelight3A.class, "limeLight");
         limeLight.start();
         tilt = new LazyServo(hardwareMap, "tilt");
+        setPipeline(Pipeline.LOCALIZING);
     }
 
 
@@ -178,12 +128,23 @@ public class Vision implements Subsystem {
 
     @Override
     public void calc(Canvas fieldOverlay) {
-      
+
+        if(pipelineRequested && ! tiltPending){
+            if(System.nanoTime()/1_000_000 - switchRequested_ms >= timeToSettle_ms){
+                boolean success = limeLight.pipelineSwitch(requestedPipeline.id);
+                tiltState = (requestedPipeline.id == localizingPipeline) ? TiltState.TILT_UP : TiltState.TILT_DOWN;
+                if(success){
+                    pipeline = requestedPipeline;
+                    pipelineRequested = false;
+                }
+            }
+        }
+
         LLResult result = limeLight.getLatestResult();
 
         switch (pipeline){
-            case APRILTAG:
-                if(result != null && result.getTimestamp() != lastTimestamp){
+            case LOCALIZING:
+                if(result != null && result.getTimestamp() != lastTimestamp && result.getPipelineIndex() == pipeline.id){
                     lastTimestamp = result.getTimestamp();
 
                     // Clear fiducial sets
@@ -199,14 +160,15 @@ public class Vision implements Subsystem {
                     // Update each Hive state
                     redHive.update(redFiducials);
                     blueHive.update(blueFiducials);
-
-
-
                 }
             break;
 
-            case POLLEN:
+            case POLLEN_TRACKING:
 
+            break;
+
+            case DUMMY:
+                // No computation while waiting for servo to swap pos.
             break;
         }
 
@@ -214,40 +176,46 @@ public class Vision implements Subsystem {
 
     @Override
     public void act() {
+        tilt.flush();
+        if(pipelineRequested && tiltPending){
+            switchRequested_ms = System.nanoTime() / 1_000_000;
+            tiltPending = false;
+        }
 
     }
     
-    // ==================== PIPELINE SETTER ====================
+    // ==================== PIPELINE AND SERVO POSITION SETTER ====================
     
     /*
-     * Set limelight pipeline 
+     * Set limelight pipeline. Reject switch if requested pipeline is already running or switching to pipeline is in progress
     */
-    public void setPipeline(Pipeline pipeline){
-        this.pipeline = pipeline;
-        limeLight.pipelineSwitch(pipeline.id);
+    public void setPipeline(Pipeline requestedPipeline){
+        if(pipeline == requestedPipeline || requestedPipeline == Pipeline.DUMMY) return;
+        if(pipelineRequested && this.requestedPipeline == requestedPipeline) return;
+
+        setServo(requestedPipeline);
+        pipeline = Pipeline.DUMMY;
+        limeLight.pipelineSwitch(dummyPipeline);
+        this.requestedPipeline = requestedPipeline;
+        pipelineRequested = true;
+        tiltPending = true;
+
     }
-
-
-    // ==================== SERVO POSITION SETTERS ====================
 
     /*
-     * Set servo position up
+    * Queue servoPosition based on requested pipeline
     */
-    public void setTiltUp(){
-        tilt.setPosition(servoNormalize(TiltState.TILT_UP.ticks));
-        tiltState = TiltState.TILT_UP;
-    }
-   
-    /*
-     * Set servo position down
-    */
-    public void setTiltDown(){
-        tilt.setPosition(servoNormalize(TiltState.TILT_DOWN.ticks));
-        tiltState = TiltState.TILT_DOWN;
-    }
-    
+    private void setServo(Pipeline requestedPipeline){
+        if(requestedPipeline == Pipeline.LOCALIZING){
+            tilt.setPosition(servoNormalize(TiltState.TILT_UP.ticks));
+        }if(requestedPipeline == Pipeline.POLLEN_TRACKING) {
+            tilt.setPosition(servoNormalize(TiltState.TILT_DOWN.ticks));
+        }
 
-    // ==================== LOCALIZATION VALUES====================
+        tiltState = TiltState.MOVING;
+    }
+
+    // ==================== LOCALIZATION VALUES ====================
     /*
      * Check if Limelight has a valid target in view.
      */
@@ -263,7 +231,7 @@ public class Vision implements Subsystem {
         return hasBotPose;
     }
 
-    /*
+    /**
      * Get horizontal offset to target.
      *
      * @return tx in degrees. Negative = target is left, Positive = right
@@ -281,7 +249,7 @@ public class Vision implements Subsystem {
         return ty;
     }
 
-    /*
+    /**
      * Get target area.
      *
      * @return ta as percentage (0-100)
@@ -291,37 +259,7 @@ public class Vision implements Subsystem {
     }
 
 
-    // ==================== TARGET DISTANCE ESTIMATION ====================
-    // For tracking a handheld AprilTag (not field-fixed goal)
-    // Distance estimated from target area using inverse square law: distance = k / sqrt(ta)
-    public static double TARGET_DISTANCE_K = 30.0;  // Calibration constant (tune with known distance)
-
-    /**
-     * Get estimated distance to the current target based on apparent size.
-     * Uses the inverse square law: distance ∝ 1/sqrt(area).
-     * Calibrate TARGET_DISTANCE_K by measuring actual distance when ta is known.
-     *
-     * @return Estimated distance in inches (0 if no valid target)
-     */
-    public double getTargetDistanceInches() {
-        if (!hasValidTarget || ta <= 0) {
-            return 0;
-        }
-        // Inverse square law: as distance doubles, area quarters
-        // So distance = k / sqrt(ta)
-        return TARGET_DISTANCE_K / Math.sqrt(ta);
-    }
-
-    /**
-     * Get calculated distance to goal.
-     * Uses botpose field localization + known goal positions.
-     *
-     * @return Distance in meters (0 if no valid botpose)
-     */
-    public double getDistanceToGoal() {
-        return distanceToGoal;
-    }
-
+    // ==================== POSITION GETTERS ====================
     /**
      * Get robot's X position on field (from botpose).
      * @return X in meters from field center
@@ -336,14 +274,6 @@ public class Vision implements Subsystem {
      */
     public double getRobotY() {
         return robotY;
-    }
-
-    /**
-     * Get robot's heading from botpose.
-     * @return Heading in radians
-     */
-    public double getRobotHeading() {
-        return robotHeading;
     }
 
     /**
@@ -432,8 +362,7 @@ public class Vision implements Subsystem {
     }
 
     public static double servoNormalize(int pulse) {
-        double normalized = (double) pulse;
-        return (normalized - 750.0) / 1500.0; //convert mr servo controller pulse width to double on _0 - 1 scale
+        return ((double) pulse - 750.0) / 1500.0; //convert mr servo controller pulse width to double on _0 - 1 scale
     }
   
     @Override
@@ -456,4 +385,3 @@ public class Vision implements Subsystem {
     }
 
 }
-

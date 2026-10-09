@@ -116,7 +116,6 @@ public class HiveTracker{
      * Calculate the current HiveState for stability checks in update()
      * @return HiveState based on current AprilTagOrientation   
      */
-    
     private HiveState getObservedState(AprilTagOrientation orientation, LLResultTypes.FiducialResult tag){
       if(orientation == getInitialOrientation(tag.getFiducialId())){
         return (isRedAlliance)? HiveState.AUDIENCE_SIDE_UP : HiveState.REAR_SIDE_UP;

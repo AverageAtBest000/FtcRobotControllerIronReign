@@ -125,7 +125,12 @@ public class HiveTracker{
       return (isRedAlliance) ? HiveState.REAR_SIDE_UP : HiveState.AUDIENCE_SIDE_UP;
     }
 
-    
+
+    public HiveState getHiveState(){
+      return hiveState;
+    }
+
+
     /**
      * Check what orientation a tag is initially in
      *

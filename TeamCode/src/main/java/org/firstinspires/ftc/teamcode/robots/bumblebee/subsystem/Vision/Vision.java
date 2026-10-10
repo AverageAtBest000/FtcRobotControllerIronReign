@@ -16,22 +16,13 @@ import org.firstinspires.ftc.teamcode.robots.lebot2.util.LimelightStream;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 
 @Config(value = "Bumblebee_Vision")
 public class Vision implements Subsystem {
-
-    class AprilTagPositions{
-        public Pose3D audienceSideUp;
-        public Pose3D rearSideUp;
-        public AprilTagPositions(Pose3D audienceSideUp, Pose3D rearSideUp){
-            this.audienceSideUp = audienceSideUp;
-            this.rearSideUp = rearSideUp;
-        }
-    }
+    public boolean isRedAlliance = false;
 
     // ==================== HARDWARE ====================
     private final Limelight3A limeLight;
@@ -45,6 +36,7 @@ public class Vision implements Subsystem {
     private static final double tiltUpDegrees = 0.0;
     public static long timeToSettle_ms = 500L;
     private long switchRequested_ms = 0L;
+
     public enum TiltState{
       TILT_UP(tiltUpTicks, tiltUpDegrees),
       TILT_DOWN(tiltDownTicks, tiltDownDegrees),
@@ -68,38 +60,40 @@ public class Vision implements Subsystem {
     private final List<LLResultTypes.FiducialResult> redFiducials = new ArrayList<>();
     private final List<LLResultTypes.FiducialResult> blueFiducials = new ArrayList<>();
 
-    // ==================== APRILTAG POSES ====================
-    HashMap<Integer, Pose3D> RED_TAGS = new HashMap<>();
-    HashMap<Integer, Pose3D> BLUE_TAGS = new HashMap<>();
 
     // ==================== LOCALIZATION VARIABLES ====================
     private double tx = 0; 
     private double ty = 0; 
     private double ta = 0;
-    private boolean hasValidTarget = false;
     private boolean hasBotPose = false;
-    private Pose3D mt2Pose = null;
-    boolean hasMT2Pose = false;
-    private double mt2X = 0, mt2Y = 0, mt2Heading = 0;
-
     private double robotX = 0.0, robotY = 0.0, robotHeading = 0.0 ;
     private Pose3D botPose = null;
-
     private double lastTimestamp = 0.0;
 
+
     // ==================== VISION PIPELINES ====================
-    public static int localizingPipeline = 1;
     public static int pollenTrackingPipeline = 2;
     public static int dummyPipeline = 3;
+    public static int redAudienceUpBlueAudienceUp = 4;
+    public static int redAudienceUpBlueAudienceDown = 5;
+    public static int redAudienceDownBlueAudienceUp = 6;
+    public static int redAudienceDownBlueAudienceDown = 7;
 
     public static enum Pipeline{
         
-        POLLEN_TRACKING(pollenTrackingPipeline),
-        LOCALIZING(localizingPipeline),
-        DUMMY(dummyPipeline);
+        POLLEN(pollenTrackingPipeline, false),
+        DUMMY(dummyPipeline,false),
+        RED_AUDIENCE_UP_BLUE_AUDIENCE_UP(redAudienceUpBlueAudienceUp, true),
+        RED_AUDIENCE_UP_BLUE_AUDIENCE_DOWN(redAudienceUpBlueAudienceDown, true),
+        RED_AUDIENCE_DOWN_BLUE_AUDIENCE_UP(redAudienceDownBlueAudienceUp, true),
+        RED_AUDIENCE_DOWN_BLUE_AUDIENCE_DOWN(redAudienceDownBlueAudienceDown, true);
 
         public final int id;
-        Pipeline(int id){this.id = id;}
+        public final boolean isLocalizer;
+        Pipeline(int id, boolean isLocalizer){
+          this.id = id;
+          this.isLocalizer = isLocalizer;
+        }
     }
 
     // Ignore frames until the initial servo move and pipeline switch complete.
@@ -111,14 +105,22 @@ public class Vision implements Subsystem {
     private LimelightStream limelightStream = null;
     public static boolean ENABLE_DASHBOARD_STREAM = false;  // Toggle via dashboard config
     public static int STREAM_FPS = 5;  // Target FPS for dashboard streaming (keep low to reduce lag)
-    public static double STREAM_SCALE = 0.5;  // Scale factor for dashboard image (0.25-1.0)
+    public static double STREAM_SCALE = 0.5;  // Scale factor forDistance calculations require botpose. dashboard image (0.25-1.0)
 
+
+    public static enum Behavior{
+      LOCALIZING,
+      POLLEN_TRACKING,
+    }
+
+    public Behavior behavior;
 
     public Vision(HardwareMap hardwareMap){
         limeLight  = hardwareMap.get(Limelight3A.class, "limeLight");
         limeLight.start();
         tilt = new LazyServo(hardwareMap, "tilt");
-        setPipeline(Pipeline.LOCALIZING);
+        setPipeline(Pipeline.RED_AUDIENCE_UP_BLUE_AUDIENCE_DOWN);
+        behavior = Behavior.LOCALIZING;
     }
 
 
@@ -129,23 +131,31 @@ public class Vision implements Subsystem {
     @Override
     public void calc(Canvas fieldOverlay) {
 
-        if(pipelineRequested && ! tiltPending){
-            if(System.nanoTime()/1_000_000 - switchRequested_ms >= timeToSettle_ms){
-                boolean success = limeLight.pipelineSwitch(requestedPipeline.id);
-                tiltState = (requestedPipeline.id == localizingPipeline) ? TiltState.TILT_UP : TiltState.TILT_DOWN;
-                if(success){
-                    pipeline = requestedPipeline;
-                    pipelineRequested = false;
-                }
+        if(pipelineRequested && !tiltPending  && System.nanoTime()/1_000_000 - switchRequested_ms >= timeToSettle_ms){
+            if(limeLight.pipelineSwitch(requestedPipeline.id)){
+                pipeline = requestedPipeline;
+                tiltState = pipeline.isLocalizer ? TiltState.TILT_UP : TiltState.TILT_DOWN;
+                pipelineRequested = false;    
             }
+
         }
 
         LLResult result = limeLight.getLatestResult();
 
-        switch (pipeline){
+        switch (behavior){
             case LOCALIZING:
-                if(result != null && result.getTimestamp() != lastTimestamp && result.getPipelineIndex() == pipeline.id){
+                if(pipelineRequested || !pipeline.isLocalizer || result == null || !result.isValid()
+                        || result.getPipelineIndex() != pipeline.id){
+                    hasBotPose = false;
+                    botPose = null;
+                    redHive.update(Collections.emptyList());
+                    blueHive.update(Collections.emptyList());
+                    break;
+                }
+                if(result.getTimestamp() != lastTimestamp){
                     lastTimestamp = result.getTimestamp();
+                    hasBotPose = false;
+                    botPose = null;
 
                     // Clear fiducial sets
                     redFiducials.clear();
@@ -154,22 +164,53 @@ public class Vision implements Subsystem {
                     // Sort fiducials by alliance
                     for (LLResultTypes.FiducialResult tag : result.getFiducialResults()) {
                         if(HiveTracker.isBlueTag(tag.getFiducialId())) blueFiducials.add(tag);
-                        else redFiducials.add(tag);
+                        else if(HiveTracker.isRedTag(tag.getFiducialId())) redFiducials.add(tag);
                     }
 
                     // Update each Hive state
                     redHive.update(redFiducials);
                     blueHive.update(blueFiducials);
+
+                    if(redHive.getHiveState() == HiveTracker.HiveState.UNKNOWN || blueHive.getHiveState() == HiveTracker.HiveState.UNKNOWN) break;
+
+                    Pipeline toUse;
+                    if(blueHive.getHiveState() == HiveTracker.HiveState.AUDIENCE_SIDE_UP &&  redHive.getHiveState() == HiveTracker.HiveState.AUDIENCE_SIDE_UP ){
+                        toUse = Pipeline.RED_AUDIENCE_UP_BLUE_AUDIENCE_UP;
+                    }else if(blueHive.getHiveState() == HiveTracker.HiveState.REAR_SIDE_UP &&  redHive.getHiveState() == HiveTracker.HiveState.REAR_SIDE_UP ){
+                        toUse = Pipeline.RED_AUDIENCE_DOWN_BLUE_AUDIENCE_DOWN;
+                    }else if(blueHive.getHiveState() == HiveTracker.HiveState.AUDIENCE_SIDE_UP && redHive.getHiveState() == HiveTracker.HiveState.REAR_SIDE_UP){
+                        toUse = Pipeline.RED_AUDIENCE_DOWN_BLUE_AUDIENCE_UP;
+                    }else{
+                        toUse = Pipeline.RED_AUDIENCE_UP_BLUE_AUDIENCE_DOWN;
+                    }
+
+                    if( pipeline != toUse){
+                      setPipeline(toUse);
+                      break;
+                    }
+
+                    tx = result.getTx();
+                    ty = result.getTy();
+                    ta = result.getTa();
+
+                    botPose = result.getBotpose_MT2();
+
+                    // Extract MT2 pose data
+                    if (botPose != null ) {
+                        hasBotPose = true;
+                        robotX = botPose.getPosition().x;
+                        robotY = botPose.getPosition().y;
+                        robotHeading = Math.toRadians(botPose.getOrientation().getYaw());
+                    } else {
+                        hasBotPose = false;
+                    }
                 }
+
             break;
 
             case POLLEN_TRACKING:
-
             break;
 
-            case DUMMY:
-                // No computation while waiting for servo to swap pos.
-            break;
         }
 
     }
@@ -189,46 +230,60 @@ public class Vision implements Subsystem {
     /*
      * Set limelight pipeline. Reject switch if requested pipeline is already running or switching to pipeline is in progress
     */
-    public void setPipeline(Pipeline requestedPipeline){
-        if(pipeline == requestedPipeline || requestedPipeline == Pipeline.DUMMY) return;
+    private void setPipeline(Pipeline requestedPipeline){
+        if((!pipelineRequested && pipeline == requestedPipeline) || requestedPipeline == Pipeline.DUMMY) return;
         if(pipelineRequested && this.requestedPipeline == requestedPipeline) return;
+        hasBotPose = false;
+        botPose = null;
+        behavior = requestedPipeline.isLocalizer ? Behavior.LOCALIZING : Behavior.POLLEN_TRACKING;
 
-        setServo(requestedPipeline);
-        pipeline = Pipeline.DUMMY;
-        limeLight.pipelineSwitch(dummyPipeline);
+        // Don't tilt if you are switching bw localization pipelines
+        if(pipeline == Pipeline.DUMMY || tiltState != (requestedPipeline.isLocalizer ? TiltState.TILT_UP : TiltState.TILT_DOWN)){
+          setServo(requestedPipeline);
+          tiltPending = true;
+          pipeline = Pipeline.DUMMY;
+          limeLight.pipelineSwitch(dummyPipeline);
+        }
+
         this.requestedPipeline = requestedPipeline;
         pipelineRequested = true;
-        tiltPending = true;
-
     }
 
     /*
     * Queue servoPosition based on requested pipeline
     */
     private void setServo(Pipeline requestedPipeline){
-        if(requestedPipeline == Pipeline.LOCALIZING){
+        if(requestedPipeline.isLocalizer){
             tilt.setPosition(servoNormalize(TiltState.TILT_UP.ticks));
-        }if(requestedPipeline == Pipeline.POLLEN_TRACKING) {
+        }else if(requestedPipeline == Pipeline.POLLEN) {
             tilt.setPosition(servoNormalize(TiltState.TILT_DOWN.ticks));
         }
 
         tiltState = TiltState.MOVING;
     }
 
-    // ==================== LOCALIZATION VALUES ====================
-    /*
-     * Check if Limelight has a valid target in view.
-     */
-    public boolean hasTarget() {
-        return hasValidTarget;
+
+    public void setBehavior(Behavior behavior){
+        this.behavior = behavior;
     }
 
-    /*
-     * Check if we have a valid botpose for field localization.
-     * Distance calculations require botpose.
+    /**
+     * Update the Limelight with current robot orientation for MegaTag2 localization.
+     * Call this before calc() each loop with a heading aligned to the field map.
+     *
+     * @param yawDegrees Field-aligned robot heading in degrees
+     */
+    public void updateRobotOrientation(double yawDegrees) {
+        limeLight.updateRobotOrientation(yawDegrees);
+    }
+
+    // ==================== LOCALIZATION VALUES ====================
+
+    /**
+     * @return If we have a valid botpose for field localization
      */
     public boolean hasBotPose() {
-        return hasBotPose;
+        return hasBotPose ;
     }
 
     /**
@@ -282,7 +337,7 @@ public class Vision implements Subsystem {
      * @return Pose3D or null if not available
      */
     public Pose3D getBotPose() {
-        return botPose;
+        return hasBotPose() ? botPose : null;
     }
 
     // ==================== DASHBOARD STREAMING ====================
@@ -378,6 +433,9 @@ public class Vision implements Subsystem {
     @Override
     public void stop() {
       stopDashboardStream();
+      limeLight.stop();
+      hasBotPose = false;
+      botPose = null;
     }
 
     @Override

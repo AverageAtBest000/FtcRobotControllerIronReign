@@ -2,10 +2,10 @@ package org.firstinspires.ftc.teamcode.robots.Catapultabot;
 
 import com.acmerobotics.dashboard.canvas.Canvas;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-//dont know what this and next line do, but octavio says to use them.
+//don't know what this and next line do, but octavio says to use them.
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-@TeleOp(name = "Catapultabot", group = "Catapultabot")d
+@TeleOp(name = "Catapultabot", group = "Catapultabot")
 public class CatapultabotTeleOp extends OpMode {
 
     private Robot catapultabot;

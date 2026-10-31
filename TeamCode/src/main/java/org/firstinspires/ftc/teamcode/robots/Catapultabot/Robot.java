@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.robots.Catapultabot;
 import com.acmerobotics.dashboard.canvas.Canvas;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import org.firstinspires.ftc.teamcode.robots.Catapultabot.Subsystems.Catapult;
 import org.firstinspires.ftc.teamcode.robots.Catapultabot.Subsystems.Intake;
 import org.firstinspires.ftc.teamcode.robots.Catapultabot.Subsystems.Subsystem;
 
@@ -15,6 +16,7 @@ public class Robot implements Subsystem
 {
     public final MeccanumDrive drive_train;
     public final Intake intake;
+    public final Catapult catapult;
 
     public final List<Subsystem> subsystems = new ArrayList<>();
 
@@ -22,9 +24,11 @@ public class Robot implements Subsystem
     {
         drive_train = new MeccanumDrive(controller);
         intake = new Intake(controller);
+        catapult = new Catapult(controller);
 
         subsystems.add(drive_train);
         subsystems.add(intake);
+        subsystems.add(catapult);
     }
 
     @Override

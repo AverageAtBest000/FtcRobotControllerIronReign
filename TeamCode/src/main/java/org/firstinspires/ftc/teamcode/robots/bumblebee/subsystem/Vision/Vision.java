@@ -16,7 +16,6 @@ import org.firstinspires.ftc.teamcode.robots.lebot2.util.LimelightStream;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -96,12 +95,12 @@ public class Vision implements Subsystem {
     private Pipeline requestedPipeline;
     private boolean pipelineRequested;
 
-    private final HashMap<String, Pipeline> pipelineStrings = new HashMap<>();
+    private HashMap<String, Pipeline> pipelineStrings;
     {
       pipelineStrings.put("AUDIENCE_SIDE_UPAUDIENCE_SIDE_UP", Pipeline.RED_AUDIENCE_UP_BLUE_AUDIENCE_UP);
       pipelineStrings.put("AUDIENCE_SIDE_UPREAR_SIDE_UP", Pipeline.RED_AUDIENCE_UP_BLUE_AUDIENCE_DOWN);
       pipelineStrings.put("REAR_SIDE_UPAUDIENCE_SIDE_UP", Pipeline.RED_AUDIENCE_DOWN_BLUE_AUDIENCE_UP);
-      pipelineStrings.put("REAR_SIDE_UPREAR_SIDE_UP", Pipeline.RED_AUDIENCE_DOWN_BLUE_AUDIENCE_DOWN);
+      pipelineStrings.put("RED_AUDIENCE_DOWN_BLUE_AUDIENCE_DOWN", Pipeline.RED_AUDIENCE_DOWN_BLUE_AUDIENCE_DOWN);
     }
 
     // ==================== DASHBOARD ====================
@@ -147,59 +146,7 @@ public class Vision implements Subsystem {
 
         switch (behavior){
             case LOCALIZING:
-                if(pipelineRequested || !pipeline.isLocalizer || result == null || !result.isValid()
-                        || result.getPipelineIndex() != pipeline.id){
-                    hasBotPose = false;
-                    botPose = null;
-                    redHive.update(Collections.emptyList());
-                    blueHive.update(Collections.emptyList());
-                    break;
-                }
-                if(result.getTimestamp() != lastTimestamp){
-                    lastTimestamp = result.getTimestamp();
-                    hasBotPose = false;
-                    botPose = null;
-
-                    // Clear fiducial sets
-                    redFiducials.clear();
-                    blueFiducials.clear();
-
-                    // Sort fiducials by alliance
-                    for (LLResultTypes.FiducialResult tag : result.getFiducialResults()) {
-                        if(HiveTracker.isBlueTag(tag.getFiducialId())) blueFiducials.add(tag);
-                        else if(HiveTracker.isRedTag(tag.getFiducialId())) redFiducials.add(tag);
-                    }
-
-                    // Update each Hive state
-                    redHive.update(redFiducials);
-                    blueHive.update(blueFiducials);
-
-                    if(redHive.getHiveState() == HiveTracker.HiveState.UNKNOWN || blueHive.getHiveState() == HiveTracker.HiveState.UNKNOWN) break;
-
-                    Pipeline toUse = pipelineStrings.get(  redHive.getHiveState().toString() + blueHive.getHiveState().toString());
-
-                    if( pipeline != toUse){
-                      setPipeline(toUse);
-                      break;
-                    }
-
-                    tx = result.getTx();
-                    ty = result.getTy();
-                    ta = result.getTa();
-
-                    botPose = result.getBotpose_MT2();
-
-                    // Extract MT2 pose data
-                    if (botPose != null ) {
-                        hasBotPose = true;
-                        robotX = botPose.getPosition().x;
-                        robotY = botPose.getPosition().y;
-                        robotHeading = Math.toRadians(botPose.getOrientation().getYaw());
-                    } else {
-                        hasBotPose = false;
-                    }
-                }
-
+              localizeWithHives(result);
             break;
 
             case POLLEN_TRACKING:
@@ -207,6 +154,62 @@ public class Vision implements Subsystem {
 
         }
 
+    }
+
+    private void localizeWithHives(LLResult result){
+      if(pipelineRequested || !pipeline.isLocalizer || result == null || !result.isValid()
+              || result.getPipelineIndex() != pipeline.id){
+          hasBotPose = false;
+          botPose = null;
+          redHive.update(Collections.emptyList());
+          blueHive.update(Collections.emptyList());
+          return;
+      }
+
+      if(result.getTimestamp() != lastTimestamp){
+          lastTimestamp = result.getTimestamp();
+          hasBotPose = false;
+          botPose = null;
+
+          // Clear fiducial sets
+          redFiducials.clear();
+          blueFiducials.clear();
+
+          // Sort fiducials by alliance
+          for (LLResultTypes.FiducialResult tag : result.getFiducialResults()) {
+              if(HiveTracker.isBlueTag(tag.getFiducialId())) blueFiducials.add(tag);
+              else if(HiveTracker.isRedTag(tag.getFiducialId())) redFiducials.add(tag);
+          }
+
+          // Update each Hive state
+          redHive.update(redFiducials);
+          blueHive.update(blueFiducials);
+
+          if(redHive.getHiveState() == HiveTracker.HiveState.UNKNOWN || blueHive.getHiveState() == HiveTracker.HiveState.UNKNOWN) break;
+
+          Pipeline toUse = pipelineStrings.get(  redHive.getHiveState().toString() + blueHive.getHiveState().toString());
+
+          if( pipeline != toUse){
+            setPipeline(toUse);
+            return;
+          }
+
+          tx = result.getTx();
+          ty = result.getTy();
+          ta = result.getTa();
+
+          botPose = result.getBotpose_MT2();
+
+          // Extract MT2 pose data
+          if (botPose != null ) {
+              hasBotPose = true;
+              robotX = botPose.getPosition().x;
+              robotY = botPose.getPosition().y;
+              robotHeading = Math.toRadians(botPose.getOrientation().getYaw());
+          } else {
+              hasBotPose = false;
+          }
+      }
     }
 
     @Override
@@ -236,7 +239,7 @@ public class Vision implements Subsystem {
           setServo(requestedPipeline);
           tiltPending = true;
           pipeline = Pipeline.DUMMY;
-          limeLight.pipelineSwitch(Pipeline.DUMMY.id);
+          limeLight.pipelineSwitch(dummyPipeline);
         }
 
         this.requestedPipeline = requestedPipeline;

@@ -155,7 +155,7 @@ public class HiveTracker{
 
 
     private AprilTagOrientation getOrientation(Pose3D pose){
-      double yAxisVertical = Math.cos(pose.getOrientation().getRoll(AngleUnit.RADIANS)) * Math.sin(pose.getOrientation().getRoll(AngleUnit.RADIANS));
+      double yAxisVertical = Math.cos(pose.getOrientation().getPitch(AngleUnit.RADIANS)) * Math.sin(pose.getOrientation().getRoll(AngleUnit.RADIANS));
 
       if(yAxisVertical <= upThreshold){
         return AprilTagOrientation.UP;

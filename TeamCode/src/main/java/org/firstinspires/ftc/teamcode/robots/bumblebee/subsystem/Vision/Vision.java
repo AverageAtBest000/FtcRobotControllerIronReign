@@ -96,12 +96,12 @@ public class Vision implements Subsystem {
     private Pipeline requestedPipeline;
     private boolean pipelineRequested;
 
-    private HashMap<String, Pipeline> pipelineStrings;
+    private HashMap<String, Pipeline> pipelineStrings = new HashMap<>();
     {
       pipelineStrings.put("AUDIENCE_SIDE_UPAUDIENCE_SIDE_UP", Pipeline.RED_AUDIENCE_UP_BLUE_AUDIENCE_UP);
       pipelineStrings.put("AUDIENCE_SIDE_UPREAR_SIDE_UP", Pipeline.RED_AUDIENCE_UP_BLUE_AUDIENCE_DOWN);
       pipelineStrings.put("REAR_SIDE_UPAUDIENCE_SIDE_UP", Pipeline.RED_AUDIENCE_DOWN_BLUE_AUDIENCE_UP);
-      pipelineStrings.put("RED_AUDIENCE_DOWN_BLUE_AUDIENCE_DOWN", Pipeline.RED_AUDIENCE_DOWN_BLUE_AUDIENCE_DOWN);
+      pipelineStrings.put("REAR_SIDE_UPREAR_SIDE_UP", Pipeline.RED_AUDIENCE_DOWN_BLUE_AUDIENCE_DOWN);
     }
 
     // ==================== DASHBOARD ====================

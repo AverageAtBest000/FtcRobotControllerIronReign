@@ -26,9 +26,11 @@ public class HiveTracker{
     public static long timeThreshold_ms = 500L;
     public static double upThreshold = -0.2;
     public static double downThreshold = 0.2;
-    
-    // ==================== TAG INITIAL ORITNTATION ====================
 
+    private boolean isStale = false;
+    public static long isStaleTreshold_ms  = 500L;  
+    public static long lastStateSet_ms;
+    // ==================== TAG INITIAL ORITNTATION ====================
     private enum AprilTagOrientation{
       UP,
       DOWN,
@@ -47,14 +49,15 @@ public class HiveTracker{
         this.isRedAlliance = isRedAlliance;
     }
     
-
+       
     // ==================== UPDATE HIVE POSITION ====================
 
     /**
      * Updates hive position based on a fresh frame. 
      * @note Currently uses only the first valid FiducialResult. Will require testing   
      */
-    public void update( List<LLResultTypes.FiducialResult> results ){
+    @Deprecated
+    public void oldUpdate( List<LLResultTypes.FiducialResult> results ){
         long timeNow_ms = System.nanoTime() / 1_000_000;
 
         // Set candidate to UNKNOWN and restart timer  - no state is visible
@@ -73,7 +76,7 @@ public class HiveTracker{
         double yY = Math.sin(rz) * Math.sin(ry) * Math.sin(rx) + Math.cos(rz) * Math.cos(rx);
         double yZ = Math.cos(ry) * Math.sin(rx);
 
-        AprilTagOrientation orientation = getOrientation(yY, yZ);
+        AprilTagOrientation orientation = getOrientation1(yY, yZ);
         HiveState observedState = getObservedState( orientation, tag);
 
         // If the current observedState does not match the candidate
@@ -93,6 +96,44 @@ public class HiveTracker{
 
     }
 
+
+  public void update( List<LLResultTypes.FiducialResult> results ){
+        long timeNow_ms = System.nanoTime() / 1_000_000;
+        
+        if(results.isEmpty()) return;
+
+        LLResultTypes.FiducialResult tag = results.get(0);
+
+        Pose3D pose = tag.getTargetPoseCameraSpace();
+          
+        AprilTagOrientation orientation = getOrientation(pose);
+        HiveState observedState = getObservedState(orientation, tag); 
+        // If the current observedState does not match the candidate
+        if(observedState != candidateState){
+          // We have a new candiate state - restart the timer
+          candidateState = observedState;
+          startTime_ms = timeNow_ms;
+        }  
+        // If we have passed the timeThreshold_ms, candidateState is confirmed stable
+        if(timeNow_ms - startTime_ms >= timeThreshold_ms){
+          // candidate state is stable - set hiveState to candidate
+          hiveState = candidateState;
+          lastStateSet_ms = timeNow_ms;
+        }
+         
+        if(lastStateSet_ms >= isStaleTreshold_ms){
+            isStale = true;
+        } 
+
+        // Set candidate to UNKNOWN and restart timer  - no state is visible
+        if(isStale){
+            startTime_ms = timeNow_ms;
+            candidateState = HiveState.UNKNOWN;
+            return;
+        }
+
+    }
+
     // ==================== APRILTAG CHECKS   ====================
     
     /**
@@ -101,7 +142,8 @@ public class HiveTracker{
      * @note A tag is "upright" when the Y axis points down 
      * @return AprilTagOrientation based on y-axis
      */
-    private AprilTagOrientation getOrientation(double yY, double yZ){
+    @Deprecated
+    private AprilTagOrientation getOrientation1(double yY, double yZ){
       if(-Math.cos(Math.toRadians(vision.tiltState.degrees)) * yY + Math.sin(Math.toRadians(vision.tiltState.degrees)) * yZ <= upThreshold){
         return AprilTagOrientation.UP;
       }else if(-Math.cos(Math.toRadians(vision.tiltState.degrees)) * yY + Math.sin(Math.toRadians(vision.tiltState.degrees)) * yZ >= downThreshold){
@@ -111,6 +153,17 @@ public class HiveTracker{
       return AprilTagOrientation.UNKNOWN;
     }
 
+
+    private AprilTagOrientation getOrientation(Pose3D pose){
+      double yAxisVertical = Math.cos(pose.getOrientation().getRoll(AngleUnit.RADIANS)) * Math.sin(pose.getOrientation().getRoll(AngleUnit.RADIANS));
+
+      if(yAxisVertical <= upThreshold){
+        return AprilTagOrientation.UP;
+      }else if(yAxisVertical >= downThreshold){
+        return AprilTagOrientation.DOWN;
+      }
+      return AprilTagOrientation.UNKNOWN;
+    }
     
     /**
      * Calculate the current HiveState for stability checks in update()

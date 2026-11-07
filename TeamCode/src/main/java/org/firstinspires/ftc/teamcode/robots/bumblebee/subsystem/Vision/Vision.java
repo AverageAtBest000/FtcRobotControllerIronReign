@@ -16,6 +16,7 @@ import org.firstinspires.ftc.teamcode.robots.lebot2.util.LimelightStream;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -156,6 +157,11 @@ public class Vision implements Subsystem {
 
     }
 
+    private void localizeNoHive(LLResult result){
+
+    }
+
+
     private void localizeWithHives(LLResult result){
       if(pipelineRequested || !pipeline.isLocalizer || result == null || !result.isValid()
               || result.getPipelineIndex() != pipeline.id){
@@ -185,7 +191,7 @@ public class Vision implements Subsystem {
           redHive.update(redFiducials);
           blueHive.update(blueFiducials);
 
-          if(redHive.getHiveState() == HiveTracker.HiveState.UNKNOWN || blueHive.getHiveState() == HiveTracker.HiveState.UNKNOWN) break;
+          if(redHive.getHiveState() == HiveTracker.HiveState.UNKNOWN || blueHive.getHiveState() == HiveTracker.HiveState.UNKNOWN) return;
 
           Pipeline toUse = pipelineStrings.get(  redHive.getHiveState().toString() + blueHive.getHiveState().toString());
 
@@ -239,7 +245,7 @@ public class Vision implements Subsystem {
           setServo(requestedPipeline);
           tiltPending = true;
           pipeline = Pipeline.DUMMY;
-          limeLight.pipelineSwitch(dummyPipeline);
+          limeLight.pipelineSwitch(Pipeline.DUMMY.id);
         }
 
         this.requestedPipeline = requestedPipeline;

@@ -29,7 +29,7 @@ public class HiveTracker{
 
     private boolean isStale = false;
     public static long isStaleTreshold_ms  = 500L;  
-    public static long lastStateSet_ms;
+    private long lastStateSet_ms;
     // ==================== TAG INITIAL ORITNTATION ====================
     private enum AprilTagOrientation{
       UP,
@@ -121,7 +121,7 @@ public class HiveTracker{
           lastStateSet_ms = timeNow_ms;
         }
          
-        if(lastStateSet_ms >= isStaleTreshold_ms){
+        if(timeNow_ms - lastStateSet_ms >= isStaleTreshold_ms){
             isStale = true;
         } 
 

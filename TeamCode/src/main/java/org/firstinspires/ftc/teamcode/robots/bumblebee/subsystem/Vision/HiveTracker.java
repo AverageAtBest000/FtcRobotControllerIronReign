@@ -108,6 +108,7 @@ public class HiveTracker{
           
         AprilTagOrientation orientation = getOrientation(pose);
         HiveState observedState = getObservedState(orientation, tag); 
+
         // If the current observedState does not match the candidate
         if(observedState != candidateState){
           // We have a new candiate state - restart the timer
@@ -154,8 +155,22 @@ public class HiveTracker{
     }
 
 
+    /**
+     * @brief use tag roll and pitch to determine direction of the Y axis
+     * @return AprilTagOrientation based on y-axis
+     * @note A tag is "upright" when the Y axis points down 
+     */
     private AprilTagOrientation getOrientation(Pose3D pose){
-      double yAxisVertical = Math.cos(pose.getOrientation().getPitch(AngleUnit.RADIANS)) * Math.sin(pose.getOrientation().getRoll(AngleUnit.RADIANS));
+      double roll = pose.getOrientation().getRoll(AngleUnit.RADIANS);
+      double pitch = pose.getOrientation().getPitch(AngleUnit.RADIANS);
+      double yaw = pose.getOrientation().getYaw(AngleUnit.RADIANS);
+
+      double yY = Math.sin(yaw) * Math.sin(pitch) * Math.sin(roll)
+              + Math.cos(yaw) * Math.cos(roll);
+      double yZ = Math.cos(pitch) * Math.sin(roll);
+      double cameraTilt = Math.toRadians(vision.tiltState.degrees);
+      double yAxisVertical = -Math.cos(cameraTilt) * yY
+              + Math.sin(cameraTilt) * yZ;
 
       if(yAxisVertical <= upThreshold){
         return AprilTagOrientation.UP;
@@ -183,6 +198,9 @@ public class HiveTracker{
       return hiveState;
     }
 
+    public boolean isStale(){
+      return isStale;
+    }
 
     /**
      * Check what orientation a tag is initially in

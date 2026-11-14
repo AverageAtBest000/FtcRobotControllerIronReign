@@ -16,8 +16,8 @@ public class Intake implements Subsystem{
 
     // MOTOR DECLARATION
     private final DcMotorEx intake;
-    private final DcMotorEx intakeSlave;
-    boolen usingSlave;
+    private DcMotorEx intakeSlave;
+    boolean usingSlave;
 
     // ENCODER CALCULATION VARIABLES
     public static double goalRPM = 700;

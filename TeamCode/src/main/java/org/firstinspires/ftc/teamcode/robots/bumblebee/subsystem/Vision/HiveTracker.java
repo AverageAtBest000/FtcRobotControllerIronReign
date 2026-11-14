@@ -73,11 +73,7 @@ public class HiveTracker{
         lastSeen_ms = timeNow_ms;
         isStale = false;
 
-        LLResultTypes.FiducialResult tag = results.get(0);
-        Pose3D pose = tag.getTargetPoseCameraSpace();
-          
-        AprilTagOrientation orientation = getOrientation(pose);
-        HiveState observedState = getObservedState(orientation, tag); 
+        HiveState observedState = getObservedState(results);
 
         // If the current observedState does not match the candidate
         if(observedState != candidateState){
@@ -95,44 +91,69 @@ public class HiveTracker{
         }
     }
 
+
     // ==================== APRILTAG CHECKS   ====================
 
 
 
-    /**
-     * @brief use tag roll and pitch to determine direction of the Y axis
-     * @return AprilTagOrientation based on y-axis
-     * @note A tag is "upright" when the Y axis points down 
-     */
-    private AprilTagOrientation getOrientation(Pose3D pose){
-      double roll = pose.getOrientation().getRoll(AngleUnit.RADIANS);
-      double pitch = pose.getOrientation().getPitch(AngleUnit.RADIANS);
-      double yaw = pose.getOrientation().getYaw(AngleUnit.RADIANS);
+    private HiveState getObservedState(List<LLResultTypes.FiducialResult> results){
 
-      double yY = Math.sin(yaw) * Math.sin(pitch) * Math.sin(roll) + Math.cos(yaw) * Math.cos(roll);
-      double yZ = Math.cos(pitch) * Math.sin(roll);
-      double cameraTilt = Math.toRadians(vision.tiltState.degrees);
-      double yAxisVertical = -Math.cos(cameraTilt) * yY + Math.sin(cameraTilt) * yZ;
+        int audienceUp = 0;
+        int rearUp = 0;
 
-      if(yAxisVertical <= upThreshold){
-        return AprilTagOrientation.UP;
-      }else if(yAxisVertical >= downThreshold){
-        return AprilTagOrientation.DOWN;
-      }
-      return AprilTagOrientation.UNKNOWN;
+        for(LLResultTypes.FiducialResult tag : results){
+            double vertical = getYVertical(tag.getTargetPoseCameraSpace());
+            AprilTagOrientation orientation = getTagOrientation(vertical);
+            HiveState predicted = getPredictedState(orientation, tag);
+
+            if(predicted == HiveState.AUDIENCE_SIDE_UP) audienceUp ++;
+            else if (predicted == HiveState.REAR_SIDE_UP) rearUp ++;
+        }
+
+        if(rearUp > audienceUp) return HiveState.REAR_SIDE_UP;
+        else if( rearUp < audienceUp) return HiveState.AUDIENCE_SIDE_UP;
+
+        return HiveState.UNKNOWN;
+
     }
-    
+
+
     /**
      * Calculate the current HiveState for stability checks in update()
-     * @return HiveState based on current AprilTagOrientation   
+     * @return HiveState based on current AprilTagOrientation
      */
-    private HiveState getObservedState(AprilTagOrientation orientation, LLResultTypes.FiducialResult tag){
-      if(orientation == getInitialOrientation(tag.getFiducialId())){
-        return (isRedAlliance)? HiveState.AUDIENCE_SIDE_UP : HiveState.REAR_SIDE_UP;
-      }else if( orientation == AprilTagOrientation.UNKNOWN){
-        return HiveState.UNKNOWN;
-      }
-      return (isRedAlliance) ? HiveState.REAR_SIDE_UP : HiveState.AUDIENCE_SIDE_UP;
+    private HiveState getPredictedState(AprilTagOrientation orientation, LLResultTypes.FiducialResult tag){
+        if(orientation == getInitialOrientation(tag.getFiducialId())){
+            return (isRedAlliance)? HiveState.AUDIENCE_SIDE_UP : HiveState.REAR_SIDE_UP;
+        }else if( orientation == AprilTagOrientation.UNKNOWN){
+            return HiveState.UNKNOWN;
+        }
+        return (isRedAlliance) ? HiveState.REAR_SIDE_UP : HiveState.AUDIENCE_SIDE_UP;
+    }
+
+    /**
+     * @return AprilTagOrientation based on y-axis
+     * @note A tag is "upright" when the Y axis points down
+     */
+    private AprilTagOrientation getTagOrientation(double yAxisVertical){
+        if(yAxisVertical <= upThreshold){
+            return AprilTagOrientation.UP;
+        }else if(yAxisVertical >= downThreshold){
+            return AprilTagOrientation.DOWN;
+        }
+        return AprilTagOrientation.UNKNOWN;
+    }
+
+    private double getYVertical(Pose3D pose){
+        double roll = pose.getOrientation().getRoll(AngleUnit.RADIANS);
+        double pitch = pose.getOrientation().getPitch(AngleUnit.RADIANS);
+        double yaw = pose.getOrientation().getYaw(AngleUnit.RADIANS);
+
+        double yY = Math.sin(yaw) * Math.sin(pitch) * Math.sin(roll) + Math.cos(yaw) * Math.cos(roll);
+        double yZ = Math.cos(pitch) * Math.sin(roll);
+        double cameraTilt = Math.toRadians(vision.tiltState.degrees);
+
+        return -Math.cos(cameraTilt) * yY + Math.sin(cameraTilt) * yZ;
     }
 
 

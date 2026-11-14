@@ -71,7 +71,10 @@ public class Vision implements Subsystem {
     private Pose3D botPose = null;
     private double lastTimestamp = 0.0;
 
+    // ==================== GOAL TRACKING ====================
 
+    private boolean hasTarget = false;
+    private double distanceToGoal_m;
     // ==================== VISION PIPELINES ====================
 
     public static enum Pipeline{
@@ -96,7 +99,7 @@ public class Vision implements Subsystem {
     private Pipeline requestedPipeline;
     private boolean pipelineRequested;
 
-    private HashMap<String, Pipeline> pipelineStrings = new HashMap<>();
+    private final HashMap<String, Pipeline> pipelineStrings = new HashMap<>();
     {
       pipelineStrings.put("AUDIENCE_SIDE_UPAUDIENCE_SIDE_UP", Pipeline.RED_AUDIENCE_UP_BLUE_AUDIENCE_UP);
       pipelineStrings.put("AUDIENCE_SIDE_UPREAR_SIDE_UP", Pipeline.RED_AUDIENCE_UP_BLUE_AUDIENCE_DOWN);
@@ -191,6 +194,10 @@ public class Vision implements Subsystem {
           redHive.update(redFiducials);
           blueHive.update(blueFiducials);
 
+          //if (redallience)
+          // if set.contains *whatever side is up tags*
+          //
+
           if(redHive.getHiveState() == HiveTracker.HiveState.UNKNOWN || blueHive.getHiveState() == HiveTracker.HiveState.UNKNOWN) return;
 
           Pipeline toUse = pipelineStrings.get(  redHive.getHiveState().toString() + blueHive.getHiveState().toString());
@@ -230,7 +237,7 @@ public class Vision implements Subsystem {
     
     // ==================== PIPELINE AND SERVO POSITION SETTER ====================
     
-    /*
+    /**
      * Set limelight pipeline. Reject switch if requested pipeline is already running or switching to pipeline is in progress
     */
     private void setPipeline(Pipeline requestedPipeline){
@@ -252,7 +259,7 @@ public class Vision implements Subsystem {
         pipelineRequested = true;
     }
 
-    /*
+    /**
     * Queue servoPosition based on requested pipeline
     */
     private void setServo(Pipeline requestedPipeline){

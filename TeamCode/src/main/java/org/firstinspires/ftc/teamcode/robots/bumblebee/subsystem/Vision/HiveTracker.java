@@ -75,6 +75,9 @@ public class HiveTracker{
 
         HiveState observedState = getObservedState(results);
 
+        // keep current candidate if HiveState is unknown
+        if(observedState == HiveState.UNKNOWN) return;
+
         // If the current observedState does not match the candidate
         if(observedState != candidateState){
           // We have a new candiate state - restart the timer

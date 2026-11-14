@@ -1,6 +1,9 @@
 package org.firstinspires.ftc.teamcode.robots.bumblebee.subsystem.Vision;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -24,6 +27,7 @@ public class HiveTracker{
     HiveState candidateState;
     private long startTime_ms = System.nanoTime() / 1_000_000;
     public static long timeThreshold_ms = 500L;
+    public static long lastSeen_ms = 0L;
     public static double upThreshold = -0.2;
     public static double downThreshold = 0.2;
 
@@ -52,58 +56,24 @@ public class HiveTracker{
        
     // ==================== UPDATE HIVE POSITION ====================
 
-    /**
-     * Updates hive position based on a fresh frame. 
-     * @note Currently uses only the first valid FiducialResult. Will require testing   
-     */
-    @Deprecated
-    public void oldUpdate( List<LLResultTypes.FiducialResult> results ){
+  public void update( List<LLResultTypes.FiducialResult> results ){
         long timeNow_ms = System.nanoTime() / 1_000_000;
 
-        // Set candidate to UNKNOWN and restart timer  - no state is visible
-        if(results.isEmpty()){
-            startTime_ms = timeNow_ms;
+        // If no tags are observed and staleness threshold has been reached
+        if(results.isEmpty() && timeNow_ms - lastSeen_ms >= isStaleTreshold_ms ){
+            isStale = true;
             candidateState = HiveState.UNKNOWN;
+            startTime_ms = timeNow_ms;
+            return;
+        }else if(results.isEmpty()){
+            // return if staleness threshold has not been reached
             return;
         }
 
-        LLResultTypes.FiducialResult tag = results.get(0);
-
-        double rx = tag.getTargetPoseCameraSpace().getOrientation().getRoll(AngleUnit.RADIANS);
-        double ry = tag.getTargetPoseCameraSpace().getOrientation().getPitch(AngleUnit.RADIANS);
-        double rz = tag.getTargetPoseCameraSpace().getOrientation().getYaw(AngleUnit.RADIANS);
-
-        double yY = Math.sin(rz) * Math.sin(ry) * Math.sin(rx) + Math.cos(rz) * Math.cos(rx);
-        double yZ = Math.cos(ry) * Math.sin(rx);
-
-        AprilTagOrientation orientation = getOrientation1(yY, yZ);
-        HiveState observedState = getObservedState( orientation, tag);
-
-        // If the current observedState does not match the candidate
-        if(observedState != candidateState){
-            // We have a new candiate state - restart the timer
-            candidateState = observedState;
-            startTime_ms = timeNow_ms;
-        }  
-        // If we have passed the timeThreshold_ms, candidateState is confirmed stable
-        if(timeNow_ms - startTime_ms >= timeThreshold_ms){
-            // candidate state is stable - set hiveState to candidate
-            hiveState = candidateState;
-        }else{
-            hiveState = HiveState.UNKNOWN;
-        }
-
-
-    }
-
-
-  public void update( List<LLResultTypes.FiducialResult> results ){
-        long timeNow_ms = System.nanoTime() / 1_000_000;
-        
-        if(results.isEmpty()) return;
+        lastSeen_ms = timeNow_ms;
+        isStale = false;
 
         LLResultTypes.FiducialResult tag = results.get(0);
-
         Pose3D pose = tag.getTargetPoseCameraSpace();
           
         AprilTagOrientation orientation = getOrientation(pose);
@@ -114,45 +84,19 @@ public class HiveTracker{
           // We have a new candiate state - restart the timer
           candidateState = observedState;
           startTime_ms = timeNow_ms;
-        }  
+          return;
+        }
+
         // If we have passed the timeThreshold_ms, candidateState is confirmed stable
         if(timeNow_ms - startTime_ms >= timeThreshold_ms){
           // candidate state is stable - set hiveState to candidate
           hiveState = candidateState;
           lastStateSet_ms = timeNow_ms;
         }
-         
-        if(timeNow_ms - lastStateSet_ms >= isStaleTreshold_ms){
-            isStale = true;
-        } 
-
-        // Set candidate to UNKNOWN and restart timer  - no state is visible
-        if(isStale){
-            startTime_ms = timeNow_ms;
-            candidateState = HiveState.UNKNOWN;
-            return;
-        }
-
     }
 
     // ==================== APRILTAG CHECKS   ====================
-    
-    /**
-     * Apply transform considering camera tilt to determine direction of the tags Y axis 
-     *
-     * @note A tag is "upright" when the Y axis points down 
-     * @return AprilTagOrientation based on y-axis
-     */
-    @Deprecated
-    private AprilTagOrientation getOrientation1(double yY, double yZ){
-      if(-Math.cos(Math.toRadians(vision.tiltState.degrees)) * yY + Math.sin(Math.toRadians(vision.tiltState.degrees)) * yZ <= upThreshold){
-        return AprilTagOrientation.UP;
-      }else if(-Math.cos(Math.toRadians(vision.tiltState.degrees)) * yY + Math.sin(Math.toRadians(vision.tiltState.degrees)) * yZ >= downThreshold){
-        return AprilTagOrientation.DOWN;
-      }
 
-      return AprilTagOrientation.UNKNOWN;
-    }
 
 
     /**
@@ -165,12 +109,10 @@ public class HiveTracker{
       double pitch = pose.getOrientation().getPitch(AngleUnit.RADIANS);
       double yaw = pose.getOrientation().getYaw(AngleUnit.RADIANS);
 
-      double yY = Math.sin(yaw) * Math.sin(pitch) * Math.sin(roll)
-              + Math.cos(yaw) * Math.cos(roll);
+      double yY = Math.sin(yaw) * Math.sin(pitch) * Math.sin(roll) + Math.cos(yaw) * Math.cos(roll);
       double yZ = Math.cos(pitch) * Math.sin(roll);
       double cameraTilt = Math.toRadians(vision.tiltState.degrees);
-      double yAxisVertical = -Math.cos(cameraTilt) * yY
-              + Math.sin(cameraTilt) * yZ;
+      double yAxisVertical = -Math.cos(cameraTilt) * yY + Math.sin(cameraTilt) * yZ;
 
       if(yAxisVertical <= upThreshold){
         return AprilTagOrientation.UP;

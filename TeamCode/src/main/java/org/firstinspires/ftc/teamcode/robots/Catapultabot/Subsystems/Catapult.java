@@ -19,14 +19,15 @@ public class Catapult implements Subsystem{
     private final Servo releaser;
     private final double servo_open;
     private final double servo_closed;
-    private enum catapult_state{
+    public enum catapult_state{
         ready,
+        readyer,
         launch,
         launched,
         resetting,
         reset,
     }
-    private catapult_state state = catapult_state.ready;
+    public catapult_state state = catapult_state.ready;
     public Catapult(HardwareMap controller)
     {
         //NA for now, no motors to reset catapult
@@ -36,8 +37,8 @@ public class Catapult implements Subsystem{
         setter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         setter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         //get ticks per rotation, tell motor num of rotations per num of ticks
-        ticks_per_rotation = 60.00;
-        rotations = 1.5;
+        ticks_per_rotation = 766.11;
+        rotations = 2.4;
         total_ticks = (int)(-ticks_per_rotation*rotations);
 
         //servo goes from 0 to 1; 0 to 180 degrees
@@ -54,19 +55,15 @@ public class Catapult implements Subsystem{
     public void calc(Canvas fieldOverlay) {
         switch(state) {
             case ready:
-                setter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 total_ticks=0;
                 break;
             case launched:
-                setter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 total_ticks=(int)(-ticks_per_rotation*rotations);
                 break;
             case reset:
-                setter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                total_ticks= (int)(ticks_per_rotation*rotations);
+                total_ticks=0;
                 break;
             default:
-                total_ticks=0;
                 break;
         }
     }
@@ -78,10 +75,13 @@ public class Catapult implements Subsystem{
             case ready:
                 state=catapult_state.launch;
                 break;
+            case readyer:
+                state=catapult_state.launch;
+                break;
             case launch:
                 releaser.setPosition(servo_open);
                 if(releaser.getPosition()==servo_open)
-                    state=catapult_state.launched;
+                    state = catapult_state.launched;
                 break;
             case launched:
                 setter.setTargetPosition(total_ticks);
@@ -90,13 +90,11 @@ public class Catapult implements Subsystem{
                     state=catapult_state.resetting;
                 break;
             case resetting:
-                setter.setTargetPosition(total_ticks);
-                setter.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                if(!setter.isBusy())
-                    state=catapult_state.reset;
+                releaser.setPosition(servo_closed);
+                if(releaser.getPosition()==servo_closed)
+                    state = catapult_state.launched;
                 break;
             case reset:
-                releaser.setPosition(servo_closed);
                 setter.setTargetPosition(total_ticks);
                 setter.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 if(!setter.isBusy() && releaser.getPosition()==servo_closed)

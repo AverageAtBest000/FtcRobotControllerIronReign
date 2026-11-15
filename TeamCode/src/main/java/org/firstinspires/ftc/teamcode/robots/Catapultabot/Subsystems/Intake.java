@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.robots.Catapultabot.Subsystems;
 
 import com.acmerobotics.dashboard.canvas.Canvas;
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -8,6 +9,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import java.util.Collections;
 import java.util.Map;
 
+@Config(value = "catapultabot_intake")
 public class Intake implements Subsystem{
     private final DcMotorEx spinner;
     private double IntakePower;
@@ -15,9 +17,11 @@ public class Intake implements Subsystem{
     {
         Idle,
         Out,
-        In
+        In,
     }
     public Behavior intakeState = Behavior.Idle;
+    public static double IP = 0.425;
+    //Need to change to velocity as that will change power on the fly, test later
 
     public Intake(HardwareMap controller)
     {
@@ -35,10 +39,10 @@ public class Intake implements Subsystem{
     public void calc(Canvas fieldOverlay) {
         switch (intakeState){
             case In:
-                IntakePower = 1;
+                IntakePower = IP;
                 break;
             case Out:
-                IntakePower = -1;
+                IntakePower = -IP;
                 break;
             case Idle:
                 IntakePower = 0;

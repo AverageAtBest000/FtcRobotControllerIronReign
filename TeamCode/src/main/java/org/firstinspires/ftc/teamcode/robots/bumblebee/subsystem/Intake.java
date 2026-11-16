@@ -16,8 +16,8 @@ public class Intake implements Subsystem{
 
     // MOTOR DECLARATION
     private final DcMotorEx intake;
-    private final DcMotorEx intakeSlave;
-
+    private DcMotorEx intakeSlave;
+    boolean usingSlave;
 
     // ENCODER CALCULATION VARIABLES
     public static double goalRPM = 700;
@@ -37,13 +37,17 @@ public class Intake implements Subsystem{
     private double intakeVelocity = 0.0;
     double ticksPerRev;
 
-    public Intake(HardwareMap hardwareMap){
+    public Intake(HardwareMap hardwareMap, boolean usingSlave){
 
+        this.usingSlave = usingSlave;
         intake = hardwareMap.get(DcMotorEx.class, "intake");
-        intakeSlave= hardwareMap.get(DcMotorEx.class, "intakeSlave");
-
         intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        intakeSlave.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        
+
+        if(usingSlave){
+          intakeSlave.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+          intakeSlave = hardwareMap.get(DcMotorEx.class, "intakeSlave");
+        }
 
         ticksPerRev = intake.getMotorType().getTicksPerRev();
         ticksPerSecond = (ticksPerRev * goalRPM) / 60.0;
@@ -75,14 +79,14 @@ public class Intake implements Subsystem{
     @Override
     public void act(){
         intake.setVelocity(intakeVelocity);
-        intakeSlave.setVelocity(intakeVelocity);
+        if(usingSlave) intakeSlave.setVelocity(intakeVelocity);
     }
 
     @Override
     public void stop(){
         behavior = Behavior.OFF;
         intake.setPower(0.0);
-        intakeSlave.setPower(0.0);
+        if(usingSlave) intakeSlave.setPower(0.0);
     }
 
     public void setBehavior(Behavior behavior){
@@ -96,10 +100,12 @@ public class Intake implements Subsystem{
     @Override
     public void resetStates(){
         intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        intakeSlave.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
         intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        intakeSlave.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        
+        if(usingSlave){
+          intakeSlave.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+          intakeSlave.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        }
     }
 
     @Override
@@ -108,7 +114,7 @@ public class Intake implements Subsystem{
 
         telemetry.put("Goal RPM", goalRPM);
         telemetry.put("Intake RPM", intake.getVelocity() * 60.0 / ticksPerRev);
-        telemetry.put("Intake Slave RPM", intakeSlave.getVelocity() * 60.0 / ticksPerRev);
+        telemetry.put("Intake Slave RPM", (usingSlave)? intakeSlave.getVelocity() * 60.0 / ticksPerRev : null);
 
         return telemetry;
     }

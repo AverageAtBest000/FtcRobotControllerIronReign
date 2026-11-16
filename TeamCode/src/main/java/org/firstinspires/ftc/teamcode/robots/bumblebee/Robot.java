@@ -21,7 +21,7 @@ public class Robot implements Subsystem{
 
     public Robot(HardwareMap hardwareMap){
 
-        intake = new Intake(hardwareMap);
+        intake = new Intake(hardwareMap, true);
         driveTrain = new DriveTrain(hardwareMap);
 
         subsystems.add(driveTrain);

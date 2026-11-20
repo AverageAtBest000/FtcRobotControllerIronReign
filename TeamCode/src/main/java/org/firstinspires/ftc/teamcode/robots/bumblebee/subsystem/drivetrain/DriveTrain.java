@@ -8,6 +8,11 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
+import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.PoseVelocity2d;
+import com.acmerobotics.roadrunner.Vector2d;
+
+
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
@@ -21,17 +26,17 @@ import java.util.logging.Handler;
 @Config(value = "BumbleBee_DriveTrain")
 public class DriveTrain implements Subsystem {
     //  SET TO FALSE FOR ROBOT CENTRIC
-    public static boolean fieldCentric = true;  
+    public boolean fieldCentric;  
     private MecanumDrive mecanumDrive;
-    private PoseVelocity2d powers = new PoseVelocity2d( new Vector2d(0,0,0));
+    private PoseVelocity2d powers = new PoseVelocity2d( new Vector2d(0,0), 0);
 
-    double forward;
-    double strafe;
-    double turn;
+    private double forward;
+    private double strafe;
+    private double turn;
 
-    public DriveTrain(HardwareMap hardwareMap, Pose2d startPos, boolean isFieldCentric){
+    public DriveTrain(HardwareMap hardwareMap, Pose2d startPos, boolean fieldCentric){
         mecanumDrive = new MecanumDrive(hardwareMap, startPos);
-        this.isFieldCentric = isFieldCentric; 
+        this.fieldCentric = fieldCentric; 
     }
 
     @Override
@@ -73,8 +78,8 @@ public class DriveTrain implements Subsystem {
     public Map<String, Object> getTelemetry(boolean debug) {
         Map<String, Object> telemetry = new LinkedHashMap<>();
 
-        telemetry.put("Pose X: ", mecanumDrive.localizer.getPose().getPosX);
-        telemetry.put("Pose Y: ", mecanumDrive.localizer.getPose().getPosY);
+        telemetry.put("Pose X: ", mecanumDrive.localizer.getPose().position.x);
+        telemetry.put("Pose Y: ", mecanumDrive.localizer.getPose().position.y);
         
         return telemetry;
     }

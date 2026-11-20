@@ -15,6 +15,11 @@ public class Flywheel implements Subsystem{
 
     private final DcMotorEx flywheel;
 
+    private long last_time_ms = 0L; 
+    public static enum Speeds{
+        
+    }
+
     public Flywheel(HardwareMap hardwareMap){
         flywheel = hardwareMap.get(DcMotorEx.class, "flywheel");
         flywheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -28,7 +33,13 @@ public class Flywheel implements Subsystem{
 
     @Override
     public void calc(Canvas fieldOverlay) {
+        long time_now_ms = System.nanoTime() / 1_000_000;
+        long time_elapsed_ms = time_now_ms - last_time_ms; 
 
+        float 
+
+
+        last_time_ms = time_now_ms; 
     }
 
     @Override

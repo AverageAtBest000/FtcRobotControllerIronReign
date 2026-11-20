@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode.robots.bumblebee;
 
 import com.acmerobotics.dashboard.canvas.Canvas;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.acmerobotics.roadrunner.Pose2d;
+
 
 import org.firstinspires.ftc.teamcode.robots.bumblebee.subsystem.drivetrain.DriveTrain;
 import org.firstinspires.ftc.teamcode.robots.bumblebee.subsystem.Intake;
@@ -15,14 +17,23 @@ import java.util.Map;
 public class Robot implements Subsystem{
 
     public final DriveTrain driveTrain;
+    private boolean driveFieldCentric = false; 
+
     public final Intake intake;
+    private boolean hasSlave = false;
 
     private final List<Subsystem> subsystems = new ArrayList<>();
 
+    public static double startPosX = 0.0;
+    public static double startPozY = 0.0;
+    public static double startHeading = 0.0; 
+
+    public Pose2d Pose = new Pose2d(startPosX, startPozY, startHeading);
+
     public Robot(HardwareMap hardwareMap){
 
-        intake = new Intake(hardwareMap, true);
-        driveTrain = new DriveTrain(hardwareMap);
+        intake = new Intake(hardwareMap, hasSlave);
+        driveTrain = new DriveTrain(hardwareMap, Pose, driveFieldCentric);
 
         subsystems.add(driveTrain);
         subsystems.add(intake);

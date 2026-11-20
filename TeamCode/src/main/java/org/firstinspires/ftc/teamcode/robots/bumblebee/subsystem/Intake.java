@@ -17,7 +17,7 @@ public class Intake implements Subsystem{
     // MOTOR DECLARATION
     private final DcMotorEx intake;
     private DcMotorEx intakeSlave;
-    boolean usingSlave;
+    private boolean usingSlave;
 
     // ENCODER CALCULATION VARIABLES
     public static double goalRPM = 700;
@@ -45,8 +45,8 @@ public class Intake implements Subsystem{
         
 
         if(usingSlave){
-          intakeSlave.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-          intakeSlave = hardwareMap.get(DcMotorEx.class, "intakeSlave");
+            intakeSlave = hardwareMap.get(DcMotorEx.class, "intakeSlave");
+            intakeSlave.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
 
         ticksPerRev = intake.getMotorType().getTicksPerRev();

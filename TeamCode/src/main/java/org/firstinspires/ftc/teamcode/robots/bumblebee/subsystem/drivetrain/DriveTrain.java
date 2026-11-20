@@ -23,16 +23,30 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Handler;
 
+import javax.swing.Action;
+
 @Config(value = "BumbleBee_DriveTrain")
 public class DriveTrain implements Subsystem {
     //  SET TO FALSE FOR ROBOT CENTRIC
     public boolean fieldCentric;  
+
+    // ======================= DRIVE DECLARATIONS =====================================
     private MecanumDrive mecanumDrive;
     private PoseVelocity2d powers = new PoseVelocity2d( new Vector2d(0,0), 0);
 
     private double forward;
     private double strafe;
     private double turn;
+
+    private Action action = null; 
+
+    public static enum Behavior{
+        MANUAL,
+        TRAJECTORY
+    }
+
+    Behavior behavior = Behavior.MANUAL;
+
 
     public DriveTrain(HardwareMap hardwareMap, Pose2d startPos, boolean fieldCentric){
         mecanumDrive = new MecanumDrive(hardwareMap, startPos);
@@ -46,17 +60,37 @@ public class DriveTrain implements Subsystem {
 
     @Override
     public void calc(Canvas fieldOverlay) {  
-        powers = new PoseVelocity2d(new Vector2d(forward, -strafe), -turn);        
+        
+        switch (behavior) {
+            case MANUAL:
+                powers = new PoseVelocity2d(new Vector2d(forward, -strafe), -turn);                        
+                break;
+        
+            case TRAJECTORY:
+
+                if(!action.run(new TelemetryPacket())){
+                    action = null;
+                    behavior = Behavior.MANUAL;
+                }
+
+                break;
+        }
+    
     }
 
     @Override
     public void act() {
-        mecanumDrive.setDrivePowers(powers);
+        if(behavior != Behavior.TRAJECTORY)
+            mecanumDrive.setDrivePowers(powers);
     }
+
 
     @Override
     public void stop() {
-        resetStates();
+        action = null;
+        behavior = Behavior.MANUAL; 
+        powers = new PoseVelocity2d(new Vector2d(0.0,0.0), 0.0);
+        mecanumDrive.setDrivePowers(powers);
     }
 
     public Pose2d getPose(){
@@ -67,19 +101,21 @@ public class DriveTrain implements Subsystem {
     public void resetStates() {
     }
 
+    //============================ TELE-OP =============================
     public void drive(double forward, double strafe, double turn){
         this.forward = forward;
         this.strafe = strafe;
         this.turn = turn;
     }
 
-
+    //============================ TELEMETRY ===========================
     @Override
     public Map<String, Object> getTelemetry(boolean debug) {
         Map<String, Object> telemetry = new LinkedHashMap<>();
 
-        telemetry.put("Pose X: ", mecanumDrive.localizer.getPose().position.x);
-        telemetry.put("Pose Y: ", mecanumDrive.localizer.getPose().position.y);
+        telemetry.put("Pose X: ", getPose().position.x);
+        telemetry.put("Pose Y: ", getPose().position.y);
+        telemetry.put("Heading (deg): ", Math.toDegrees(getPose().position.heading));
         
         return telemetry;
     }

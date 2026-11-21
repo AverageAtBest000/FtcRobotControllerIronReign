@@ -15,7 +15,13 @@ public class Flywheel implements Subsystem{
 
     private final DcMotorEx flywheel;
 
-    private long last_time_ms = 0L; 
+    public static double goalRPM = 700;
+
+    private double bareTicksPerRev  = 28.0;
+    private double gearRatio = 32.0/48.0;
+    private double ticksPerRev = bareTicksPerRev * gearRatio;
+    private double ticksPerSecond = (ticksPerRev * goalRPM) / 60.0;
+
     public static enum Speeds{
         
     }
@@ -33,13 +39,7 @@ public class Flywheel implements Subsystem{
 
     @Override
     public void calc(Canvas fieldOverlay) {
-        long time_now_ms = System.nanoTime() / 1_000_000;
-        long time_elapsed_ms = time_now_ms - last_time_ms; 
 
-        float 
-
-
-        last_time_ms = time_now_ms; 
     }
 
     @Override

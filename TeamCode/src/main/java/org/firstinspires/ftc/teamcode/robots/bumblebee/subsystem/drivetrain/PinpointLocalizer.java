@@ -25,11 +25,11 @@ import java.util.Objects;
  * This is already efficient, but we cache it to avoid double reads if both
  * Robot.update() and RoadRunner call update() in the same cycle.
  */
-@Config
+@Config(value = "Bumblebee_Pinpoint")
 public final class PinpointLocalizer implements Localizer {
     public static class Params {
-        public double parYTicks = 1407; // y position of the parallel encoder (in tick units)
-        public double perpXTicks = 3844; // x position of the perpendicular encoder (in tick units)
+        public double parYTicks = 0; // y position of the parallel encoder (in tick units)
+        public double perpXTicks = 0; // x position of the perpendicular encoder (in tick units)
     }
 
     private final double xOffsetMm = 0.0;
@@ -57,7 +57,7 @@ public final class PinpointLocalizer implements Localizer {
         driver = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
 
         double mmPerTick = inPerTick * 25.4;
-        driver.setEncoderResolution(goBILDA_4_BAR_POD, DistanceUnit.MM);
+        driver.setEncoderResolution(1/mmPerTick, DistanceUnit.MM);
         //driver.setOffsets(mmPerTick * PARAMS.parYTicks, mmPerTick * PARAMS.perpXTicks, DistanceUnit.MM);
         // TODO: reverse encoder directions if needed
         initialParDirection = GoBildaPinpointDriver.EncoderDirection.FORWARD;
@@ -68,7 +68,8 @@ public final class PinpointLocalizer implements Localizer {
         driver.resetPosAndIMU();
 
         // Set offsets AFTER resetPosAndIMU in case reset clears them
-        driver.setOffsets(xOffsetMm, yOffsetMm, DistanceUnit.MM);
+        // ticks = mm * tickspermm
+        driver.setOffsets(mmPerTick * PARAMS.parYTicks, mmPerTick * PARAMS.perpXTicks, DistanceUnit.MM);
         
         txWorldPinpoint = initialPose;
     }

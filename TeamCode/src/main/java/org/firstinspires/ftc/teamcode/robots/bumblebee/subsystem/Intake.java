@@ -21,8 +21,11 @@ public class Intake implements Subsystem{
 
     // ENCODER CALCULATION VARIABLES
     public static double goalRPM = 700;
-    public static double ticksPerSecond;
 
+    private double bareTicksPerRev  = 28.0;
+    private double gearRatio = 32.0/48.0;
+    private double ticksPerRev = bareTicksPerRev * gearRatio;
+    private double ticksPerSecond = (ticksPerRev * goalRPM) / 60.0;
 
     //INTAKING STATES
     public static enum Behavior {
@@ -35,8 +38,7 @@ public class Intake implements Subsystem{
 
     // TO FLUSH
     private double intakeVelocity = 0.0;
-    double ticksPerRev;
-
+    
     public Intake(HardwareMap hardwareMap, boolean usingSlave){
 
         this.usingSlave = usingSlave;
@@ -48,9 +50,6 @@ public class Intake implements Subsystem{
             intakeSlave = hardwareMap.get(DcMotorEx.class, "intakeSlave");
             intakeSlave.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
-
-        ticksPerRev = intake.getMotorType().getTicksPerRev();
-        ticksPerSecond = (ticksPerRev * goalRPM) / 60.0;
     }
 
     @Override
@@ -59,6 +58,8 @@ public class Intake implements Subsystem{
 
     @Override
     public void calc(Canvas fieldOverlay){
+
+        ticksPerSecond = (ticksPerRev * goalRPM) / 60.0;
         switch (behavior){
 
             case OFF:

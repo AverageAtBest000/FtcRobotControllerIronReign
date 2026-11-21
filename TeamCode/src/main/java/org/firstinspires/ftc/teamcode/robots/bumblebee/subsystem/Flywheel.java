@@ -86,7 +86,7 @@ public class Flywheel implements Subsystem{
 
         Map<String, Object> telemetry = new LinkedHashMap<>();
         
-        telemetry.put("Flywheel RPM: ", (ticksPerSecond * 60.0) / ticksPerRev );
+        telemetry.put("Flywheel RPM: ", (flywheel.getVelocity() * 60.0) / ticksPerRev );
         return telemetry;
     }
 

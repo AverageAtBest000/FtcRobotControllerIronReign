@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.rrQuickStart.tuning;
+package org.firstinspires.ftc.teamcode.robots.bumblebee.tuning;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.reflection.ReflectionConfig;
@@ -38,7 +38,7 @@ public final class TuningOpModes {
 
     public static final String GROUP = "bublebee_rr";
     public static final String PREFIX = "6832 "; //XX indicates this is just an unintegrated template. change prefix to team number during integration
-    public static final boolean DISABLED = false; // if needing to enable these, change this
+    public static final boolean DISABLED = true; // if needing to enable these, change this
 
     private TuningOpModes() {}
 

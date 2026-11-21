@@ -7,6 +7,7 @@ import com.acmerobotics.roadrunner.Pose2d;
 
 import org.firstinspires.ftc.teamcode.robots.bumblebee.subsystem.drivetrain.DriveTrain;
 import org.firstinspires.ftc.teamcode.robots.bumblebee.subsystem.Intake;
+import org.firstinspires.ftc.teamcode.robots.bumblebee.subsystem.Flywheel;
 import org.firstinspires.ftc.teamcode.robots.bumblebee.subsystem.Subsystem;
 
 import java.util.ArrayList;
@@ -22,6 +23,8 @@ public class Robot implements Subsystem{
     public final Intake intake;
     private boolean hasSlave = false;
 
+    public final Flywheel flywheel;
+
     private final List<Subsystem> subsystems = new ArrayList<>();
 
     public static double startPosX = 0.0;
@@ -34,10 +37,11 @@ public class Robot implements Subsystem{
 
         intake = new Intake(hardwareMap, hasSlave);
         driveTrain = new DriveTrain(hardwareMap, Pose, driveFieldCentric);
+        flywheel = new Flywheel(hardwareMap);
 
         subsystems.add(driveTrain);
         subsystems.add(intake);
-
+        subsystems.add(flywheel);
     }
 
 

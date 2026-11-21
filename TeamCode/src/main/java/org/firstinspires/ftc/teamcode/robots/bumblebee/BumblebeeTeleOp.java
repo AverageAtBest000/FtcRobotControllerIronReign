@@ -24,6 +24,7 @@ public class BumblebeeTeleOp extends OpMode {
         driverControls.update();
         robot.calc(new Canvas());
         robot.act();
+        robot.updateTelemetry(telemetry);
     }
 
     @Override

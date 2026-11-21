@@ -71,7 +71,10 @@ public class Vision implements Subsystem {
     private Pose3D botPose = null;
     private double lastTimestamp = 0.0;
 
+    // ==================== GOAL TRACKING ====================
 
+    private boolean hasTarget = false;
+    private double distanceToGoal_m;
     // ==================== VISION PIPELINES ====================
 
     public static enum Pipeline{
@@ -147,59 +150,7 @@ public class Vision implements Subsystem {
 
         switch (behavior){
             case LOCALIZING:
-                if(pipelineRequested || !pipeline.isLocalizer || result == null || !result.isValid()
-                        || result.getPipelineIndex() != pipeline.id){
-                    hasBotPose = false;
-                    botPose = null;
-                    redHive.update(Collections.emptyList());
-                    blueHive.update(Collections.emptyList());
-                    break;
-                }
-                if(result.getTimestamp() != lastTimestamp){
-                    lastTimestamp = result.getTimestamp();
-                    hasBotPose = false;
-                    botPose = null;
-
-                    // Clear fiducial sets
-                    redFiducials.clear();
-                    blueFiducials.clear();
-
-                    // Sort fiducials by alliance
-                    for (LLResultTypes.FiducialResult tag : result.getFiducialResults()) {
-                        if(HiveTracker.isBlueTag(tag.getFiducialId())) blueFiducials.add(tag);
-                        else if(HiveTracker.isRedTag(tag.getFiducialId())) redFiducials.add(tag);
-                    }
-
-                    // Update each Hive state
-                    redHive.update(redFiducials);
-                    blueHive.update(blueFiducials);
-
-                    if(redHive.getHiveState() == HiveTracker.HiveState.UNKNOWN || blueHive.getHiveState() == HiveTracker.HiveState.UNKNOWN) break;
-
-                    Pipeline toUse = pipelineStrings.get(  redHive.getHiveState().toString() + blueHive.getHiveState().toString());
-
-                    if( pipeline != toUse){
-                      setPipeline(toUse);
-                      break;
-                    }
-
-                    tx = result.getTx();
-                    ty = result.getTy();
-                    ta = result.getTa();
-
-                    botPose = result.getBotpose_MT2();
-
-                    // Extract MT2 pose data
-                    if (botPose != null ) {
-                        hasBotPose = true;
-                        robotX = botPose.getPosition().x;
-                        robotY = botPose.getPosition().y;
-                        robotHeading = Math.toRadians(botPose.getOrientation().getYaw());
-                    } else {
-                        hasBotPose = false;
-                    }
-                }
-
+              localizeWithHives(result);
             break;
 
             case POLLEN_TRACKING:
@@ -207,6 +158,71 @@ public class Vision implements Subsystem {
 
         }
 
+    }
+
+    private void localizeNoHive(LLResult result){
+
+    }
+
+
+    private void localizeWithHives(LLResult result){
+      if(pipelineRequested || !pipeline.isLocalizer || result == null || !result.isValid()
+              || result.getPipelineIndex() != pipeline.id){
+          hasBotPose = false;
+          botPose = null;
+          redHive.update(Collections.emptyList());
+          blueHive.update(Collections.emptyList());
+          return;
+      }
+
+      if(result.getTimestamp() != lastTimestamp){
+          lastTimestamp = result.getTimestamp();
+          hasBotPose = false;
+          botPose = null;
+
+          // Clear fiducial sets
+          redFiducials.clear();
+          blueFiducials.clear();
+
+          // Sort fiducials by alliance
+          for (LLResultTypes.FiducialResult tag : result.getFiducialResults()) {
+              if(HiveTracker.isBlueTag(tag.getFiducialId())) blueFiducials.add(tag);
+              else if(HiveTracker.isRedTag(tag.getFiducialId())) redFiducials.add(tag);
+          }
+
+          // Update each Hive state
+          redHive.update(redFiducials);
+          blueHive.update(blueFiducials);
+
+          //if (redallience)
+          // if set.contains *whatever side is up tags*
+          //
+
+          if(redHive.getHiveState() == HiveTracker.HiveState.UNKNOWN || blueHive.getHiveState() == HiveTracker.HiveState.UNKNOWN) return;
+
+          Pipeline toUse = pipelineStrings.get(  redHive.getHiveState().toString() + blueHive.getHiveState().toString());
+
+          if( pipeline != toUse){
+            setPipeline(toUse);
+            return;
+          }
+
+          tx = result.getTx();
+          ty = result.getTy();
+          ta = result.getTa();
+
+          botPose = result.getBotpose_MT2();
+
+          // Extract MT2 pose data
+          if (botPose != null ) {
+              hasBotPose = true;
+              robotX = botPose.getPosition().x;
+              robotY = botPose.getPosition().y;
+              robotHeading = Math.toRadians(botPose.getOrientation().getYaw());
+          } else {
+              hasBotPose = false;
+          }
+      }
     }
 
     @Override
@@ -221,7 +237,7 @@ public class Vision implements Subsystem {
     
     // ==================== PIPELINE AND SERVO POSITION SETTER ====================
     
-    /*
+    /**
      * Set limelight pipeline. Reject switch if requested pipeline is already running or switching to pipeline is in progress
     */
     private void setPipeline(Pipeline requestedPipeline){
@@ -243,7 +259,7 @@ public class Vision implements Subsystem {
         pipelineRequested = true;
     }
 
-    /*
+    /**
     * Queue servoPosition based on requested pipeline
     */
     private void setServo(Pipeline requestedPipeline){

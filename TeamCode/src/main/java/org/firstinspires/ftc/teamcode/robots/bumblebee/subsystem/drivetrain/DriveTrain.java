@@ -116,7 +116,7 @@ public class DriveTrain implements Subsystem {
 
         telemetry.put("Pose X: ", getPose().position.x);
         telemetry.put("Pose Y: ", getPose().position.y);
-        telemetry.put("Heading (deg): ", Math.toDegrees(getPose().heading));
+        telemetry.put("Heading (deg): ", Math.toDegrees(getPose().heading.toDouble()));
         
         return telemetry;
     }

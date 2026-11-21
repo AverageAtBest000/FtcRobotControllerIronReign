@@ -44,11 +44,13 @@ public class Intake implements Subsystem{
         this.usingSlave = usingSlave;
         intake = hardwareMap.get(DcMotorEx.class, "intake");
         intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        
+        intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+
 
         if(usingSlave){
             intakeSlave = hardwareMap.get(DcMotorEx.class, "intakeSlave");
             intakeSlave.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         }
     }
 

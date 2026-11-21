@@ -137,6 +137,8 @@ public final class PinpointLocalizer implements Localizer {
         if (!refreshedThisCycle) {
             refresh();
         }
+
+        refreshedThisCycle = false;
         return cachedVelocity;
     }
 }

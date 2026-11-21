@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import org.firstinspires.ftc.teamcode.robots.bumblebee.subsystem.Intake;
 
 import org.firstinspires.ftc.teamcode.robots.bumblebee.subsystem.Flywheel;
+import org.firstinspires.ftc.teamcode.robots.bumblebee.subsystem.Ramp;
 import org.firstinspires.ftc.teamcode.robots.csbot.util.StickyGamepad;
 
 public class DriverControls {
@@ -22,6 +23,7 @@ public class DriverControls {
         handleDrivetrain();
         handleIntake();
         handleFlywheel();
+        handleRamp();
     }
 
     public void handleDrivetrain(){
@@ -49,6 +51,13 @@ public class DriverControls {
         }else if(stickyGamepad1.left_trigger){
             if(robot.flywheel.getBehavior() == Flywheel.Behavior.STOPPED) robot.flywheel.setBehavior(Flywheel.Behavior.IDLE);
             else robot.flywheel.setBehavior(Flywheel.Behavior.STOPPED);
+        }
+    }
+
+    public void handleRamp(){
+        if(stickyGamepad1.a){
+            if(robot.ramp.getBehavior() == Ramp.Behavior.RAISED) robot.ramp.setBehavior(Ramp.Behavior.LOWERED);
+            else robot.ramp.setBehavior(Ramp.Behavior.RAISED);
         }
     }
 

@@ -46,7 +46,7 @@ public class DriverControls {
 
     public void handleFlywheel(){
         if(stickyGamepad1.right_trigger){
-            if(robot.flywheel.getBehavior == Flywheel.Behavior.RUNNING) robot.flywheel.setBehavior(Flywheel.Behavior.STOPPED);
+            if(robot.flywheel.getBehavior() == Flywheel.Behavior.RUNNING) robot.flywheel.setBehavior(Flywheel.Behavior.STOPPED);
             else robot.flywheel.setBehavior(Flywheel.Behavior.RUNNING);
         }
     }

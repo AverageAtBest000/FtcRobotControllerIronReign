@@ -26,9 +26,9 @@ public class Flywheel implements Subsystem{
     private final DcMotorEx flywheel;
     private final DcMotorEx feeder;
 
-    public static double goalRPM = 700;
+    public static double goalRPM = 3700;
     public static double rpmTolerance = 25;
-    public static long feedTime_ms = 2500L;
+    public static long feedTime_ms = 4000L;
     public static long spinUpTimeout_ms = 2000L;
     public static double idlePercent = 0.5;
 
@@ -58,6 +58,7 @@ public class Flywheel implements Subsystem{
         flywheel = hardwareMap.get(DcMotorEx.class, "flywheel");
         flywheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         flywheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        flywheel.setDirection(DcMotorSimple.Direction.REVERSE);
 
         feeder = hardwareMap.get(DcMotorEx.class, "feeder");
         feeder.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);

@@ -44,8 +44,11 @@ public class DriverControls {
 
     public void handleFlywheel(){
         if(stickyGamepad1.right_trigger){
-            if(robot.flywheel.getBehavior() == Flywheel.Behavior.RUNNING) robot.flywheel.setBehavior(Flywheel.Behavior.STOPPED);
-            else robot.flywheel.setBehavior(Flywheel.Behavior.RUNNING);
+            if(robot.flywheel.getBehavior() == Flywheel.Behavior.LAUNCHING) robot.flywheel.setBehavior(Flywheel.Behavior.IDLE);
+            else robot.flywheel.setBehavior(Flywheel.Behavior.LAUNCHING);
+        }else if(stickyGamepad1.left_trigger){
+            if(robot.flywheel.getBehavior() == Flywheel.Behavior.STOPPED) robot.flywheel.setBehavior(Flywheel.Behavior.IDLE);
+            else robot.flywheel.setBehavior(Flywheel.Behavior.STOPPED);
         }
     }
 

@@ -23,7 +23,7 @@ public class Intake implements Subsystem{
     public static double goalRPM = 700;
 
     private double bareTicksPerRev  = 28.0;
-    private double gearRatio = 32.0/48.0;
+    private double gearRatio = 3.0/1.0;
     private double ticksPerRev = bareTicksPerRev * gearRatio;
     private double ticksPerSecond = (ticksPerRev * goalRPM) / 60.0;
 
@@ -31,9 +31,9 @@ public class Intake implements Subsystem{
     public static enum Behavior {
         OFF,
         INTAKING,
-
         EJECTING
     }
+    
     private Behavior behavior = Behavior.OFF;
 
     // TO FLUSH

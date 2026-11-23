@@ -20,7 +20,7 @@ public class Intake implements Subsystem{
     private boolean usingSlave;
 
     // ENCODER CALCULATION VARIABLES
-    public static double goalRPM = 700;
+    public static double goalRPM = 1400;
 
     private double bareTicksPerRev  = 28.0;
     private double gearRatio = 3.0/1.0;

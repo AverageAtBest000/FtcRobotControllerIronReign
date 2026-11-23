@@ -13,10 +13,13 @@ import org.firstinspires.ftc.teamcode.robots.bumblebee.subsystem.Flywheel;
 public class BumblebeeAuton extends OpMode {
 
     public static double driveDelay_ms = 0;
-    public static double drivePower = 0.4;
-    public static double driveTime_ms = 1000;
-    public static double shootTimeout_ms = 6000;
 
+    private int timesShot = 0;
+
+    private int shotsToAttempt = 3;
+    public static double drivePower = 0.25;
+    public static double driveTime_ms = 250;
+    public static double shootTimeout_ms = 6000;
     private enum Stage { SHOOT, WAIT, DRIVE, DONE }
 
     private Robot robot;
@@ -42,7 +45,9 @@ public class BumblebeeAuton extends OpMode {
                 if (robot.flywheel.getBehavior() != Flywheel.Behavior.LAUNCHING
                         || timer.milliseconds() > shootTimeout_ms) {
                     robot.flywheel.setBehavior(Flywheel.Behavior.STOPPED);
-                    stage = Stage.WAIT;
+                    if(timesShot >= shotsToAttempt) stage = Stage.DRIVE;
+                    else stage = Stage.SHOOT;
+                    timesShot++;
                     timer.reset();
                 }
                 break;

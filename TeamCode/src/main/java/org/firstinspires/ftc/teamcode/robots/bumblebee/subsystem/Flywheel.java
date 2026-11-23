@@ -28,7 +28,7 @@ public class Flywheel implements Subsystem{
 
     public static double goalRPM = 3700;
     public static double rpmTolerance = 25;
-    public static long feedTime_ms = 2500L;
+    public static long feedTime_ms = 4000L;
     public static long spinUpTimeout_ms = 2000L;
     public static double idlePercent = 0.5;
 

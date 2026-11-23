@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.robots.Catapultabot.Subsystems;
 
 import com.acmerobotics.dashboard.canvas.Canvas;
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -11,6 +12,7 @@ import org.firstinspires.ftc.teamcode.robots.Catapultabot.DriverControls;
 import java.util.Collections;
 import java.util.Map;
 
+@Config(value = "catapultabot_catapult")
 public class Catapult implements Subsystem{
     private final DcMotorEx setter;
     private final double ticks_per_rotation;
@@ -34,17 +36,24 @@ public class Catapult implements Subsystem{
         setter = controller.get(DcMotorEx.class, "catapult_reset");
         releaser = controller.get(Servo.class, "catapult_release");
         //a dc motor with a encoder for positions to turn to
-        setter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         setter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        setter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         //get ticks per rotation, tell motor num of rotations per num of ticks
-        ticks_per_rotation = 766.11;
-        rotations = 2.4;
+        //base encoder ticks times total gear ratio (2 X 5.83:1) gears
+        ticks_per_rotation = ( 28 * 2 * 5.23 );
+        //ticks_per_rotation = ( 28);
+        rotations = 1;
         total_ticks = (int)(-ticks_per_rotation*rotations);
 
-        //servo goes from 0 to 1; 0 to 180 degrees
-        servo_open = 0.0;
-        servo_closed = 0.5;
-        setter.setPower(0.5);
+        //servo goes from 0 to 1; 0 to 180 degrees., but represented as a range from ~900 ticks to ~2048 ticks
+        servo_closed = servoNormalize(899);
+        servo_open = servoNormalize(1845);
+        releaser.setPosition(servo_open);
+    }
+
+    public static double servoNormalize(int pulse) {
+        double normalized = (double) pulse;
+        return (normalized - 750.0) / 1500.0;
     }
 
     @Override
@@ -55,7 +64,6 @@ public class Catapult implements Subsystem{
     public void calc(Canvas fieldOverlay) {
         switch(state) {
             case ready:
-                total_ticks=0;
                 break;
             case launched:
                 total_ticks=(int)(-ticks_per_rotation*rotations);
@@ -73,15 +81,13 @@ public class Catapult implements Subsystem{
         //do work
         switch(state) {
             case ready:
-                state=catapult_state.launch;
                 break;
             case readyer:
                 state=catapult_state.launch;
                 break;
             case launch:
                 releaser.setPosition(servo_open);
-                if(releaser.getPosition()==servo_open)
-                    state = catapult_state.launched;
+                state = catapult_state.launched;
                 break;
             case launched:
                 setter.setTargetPosition(total_ticks);
@@ -91,8 +97,7 @@ public class Catapult implements Subsystem{
                 break;
             case resetting:
                 releaser.setPosition(servo_closed);
-                if(releaser.getPosition()==servo_closed)
-                    state = catapult_state.launched;
+                state = catapult_state.launched;
                 break;
             case reset:
                 setter.setTargetPosition(total_ticks);
@@ -107,12 +112,14 @@ public class Catapult implements Subsystem{
 
     @Override
     public void stop() {
-        setter.setPower(0);
+        //setter.setPower(0);
     }
 
     @Override
     public void resetStates() {
-        setter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        setter.setTargetPosition(0);
+        setter.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        releaser.setPosition(servo_open);
         releaser.setPosition(servo_closed);
     }
 

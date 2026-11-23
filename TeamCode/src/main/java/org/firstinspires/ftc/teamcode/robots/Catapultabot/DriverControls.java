@@ -19,8 +19,9 @@ public class DriverControls {
 
     public void update(){
         activateDriveTrain();
+        remote_toggle.update();
+        //activateCatapult();
         activateIntake();
-        activateCatapult();
     }
     public void activateDriveTrain(){
         double forward = -remote_control.left_stick_y;
@@ -29,16 +30,13 @@ public class DriverControls {
 
         catapultabot.drive_train.setPower(forward, strafe, turn);
     }
-    public void activateCatapult(){
-        remote_toggle.update();
-        if(remote_toggle.right_trigger){
-            if(catapultabot.catapult.state == Catapult.catapult_state.ready)
-                catapultabot.catapult.state = Catapult.catapult_state.readyer;
-        }
-    }
+//     public void activateCatapult(){
+//        if(remote_toggle.right_trigger){
+//            if(catapultabot.catapult.state == Catapult.catapult_state.ready)
+//                catapultabot.catapult.state = Catapult.catapult_state.readyer;
+//        }
+//    }
     public void activateIntake(){
-        remote_toggle.update();
-
         if(remote_toggle.right_bumper){
             if(catapultabot.intake.getIntakeState() == Intake.Behavior.In)
                 catapultabot.intake.setIntakeState(Intake.Behavior.Idle);

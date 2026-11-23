@@ -16,7 +16,7 @@ public class Robot implements Subsystem
 {
     public final MeccanumDrive drive_train;
     public final Intake intake;
-    public final Catapult catapult;
+    //public final Catapult catapult;
 
     public final List<Subsystem> subsystems = new ArrayList<>();
 
@@ -24,11 +24,11 @@ public class Robot implements Subsystem
     {
         drive_train = new MeccanumDrive(controller);
         intake = new Intake(controller);
-        catapult = new Catapult(controller);
+        //catapult = new Catapult(controller);
 
         subsystems.add(drive_train);
         subsystems.add(intake);
-        subsystems.add(catapult);
+        //subsystems.add(catapult);
     }
 
     @Override

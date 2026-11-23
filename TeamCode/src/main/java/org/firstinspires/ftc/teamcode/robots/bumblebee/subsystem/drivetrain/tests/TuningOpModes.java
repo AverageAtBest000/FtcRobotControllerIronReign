@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.robots.bumblebee.tuning;
+package org.firstinspires.ftc.teamcode.robots.bumblebee.subsystem.drivetrain.tests;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.reflection.ReflectionConfig;

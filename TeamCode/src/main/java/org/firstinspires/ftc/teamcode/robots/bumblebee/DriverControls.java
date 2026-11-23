@@ -2,6 +2,9 @@ package org.firstinspires.ftc.teamcode.robots.bumblebee;
 
 import com.qualcomm.robotcore.hardware.Gamepad;
 import org.firstinspires.ftc.teamcode.robots.bumblebee.subsystem.Intake;
+
+import org.firstinspires.ftc.teamcode.robots.bumblebee.subsystem.Flywheel;
+import org.firstinspires.ftc.teamcode.robots.bumblebee.subsystem.Ramp;
 import org.firstinspires.ftc.teamcode.robots.csbot.util.StickyGamepad;
 
 public class DriverControls {
@@ -16,8 +19,11 @@ public class DriverControls {
     }
 
     public void update(){
+        stickyGamepad1.update();
         handleDrivetrain();
         handleIntake();
+        handleFlywheel();
+        handleRamp();
     }
 
     public void handleDrivetrain(){
@@ -29,14 +35,29 @@ public class DriverControls {
     }
 
     public void handleIntake(){
-        stickyGamepad1.update();
-
         if(stickyGamepad1.right_bumper){
             if(robot.intake.getBehavior() == Intake.Behavior.INTAKING) robot.intake.setBehavior(Intake.Behavior.OFF);
             else robot.intake.setBehavior(Intake.Behavior.INTAKING);
-        }else if(stickyGamepad1.left_bumper){
+        }else if(stickyGamepad1.dpad_up){
             if(robot.intake.getBehavior() == Intake.Behavior.EJECTING) robot.intake.setBehavior(Intake.Behavior.OFF);
             else robot.intake.setBehavior(Intake.Behavior.EJECTING);
+        }
+    }
+
+    public void handleFlywheel(){
+        if(stickyGamepad1.right_trigger){
+            if(robot.flywheel.getBehavior() == Flywheel.Behavior.LAUNCHING) robot.flywheel.setBehavior(Flywheel.Behavior.IDLE);
+            else robot.flywheel.setBehavior(Flywheel.Behavior.LAUNCHING);
+        }else if(stickyGamepad1.left_trigger){
+            if(robot.flywheel.getBehavior() == Flywheel.Behavior.STOPPED) robot.flywheel.setBehavior(Flywheel.Behavior.IDLE);
+            else robot.flywheel.setBehavior(Flywheel.Behavior.STOPPED);
+        }
+    }
+
+    public void handleRamp(){
+        if(stickyGamepad1.a){
+            if(robot.ramp.getBehavior() == Ramp.Behavior.RAISED) robot.ramp.setBehavior(Ramp.Behavior.LOWERED);
+            else robot.ramp.setBehavior(Ramp.Behavior.RAISED);
         }
     }
 

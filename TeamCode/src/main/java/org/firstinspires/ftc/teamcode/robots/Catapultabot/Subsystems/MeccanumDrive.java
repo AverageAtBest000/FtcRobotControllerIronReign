@@ -1,13 +1,10 @@
-package org.firstinspires.ftc.teamcode.robots.Catapultabot;
+package org.firstinspires.ftc.teamcode.robots.Catapultabot.Subsystems;
 
 import com.acmerobotics.dashboard.canvas.Canvas;
+import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-
-import org.firstinspires.ftc.teamcode.robots.Catapultabot.Subsystems.Subsystem;
-import org.firstinspires.ftc.teamcode.robots.ri2d2.subsystem.drivetrain.DriveTrainBase;
 
 import java.util.Collections;
 import java.util.Map;
@@ -34,6 +31,7 @@ public class MeccanumDrive implements Subsystem
         fleft.setDirection(DcMotor.Direction.REVERSE);
         bleft.setDirection(DcMotor.Direction.REVERSE);
     }
+
     //Sets motor power based on controll input+maths to drive
     public void drive(double forward, double strafe, double turn) {
             //math for moving

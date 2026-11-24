@@ -28,7 +28,7 @@ import java.util.Objects;
 @Config(value = "Bumblebee_Pinpoint")
 public final class PinpointLocalizer implements Localizer {
     public static class Params {
-        public double parYTicks = 3787.121061791266; // y position of the parallel encoder (in tick units)
+        public double parYTicks = -3787.121061791266; // y position of the parallel encoder (in tick units)
         public double perpXTicks = 66.22424327929909; // x position of the perpendicular encoder (in tick units)
     }
 

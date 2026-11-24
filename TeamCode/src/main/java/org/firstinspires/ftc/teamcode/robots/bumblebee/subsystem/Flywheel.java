@@ -26,7 +26,7 @@ public class Flywheel implements Subsystem{
     private final DcMotorEx flywheel;
     private final DcMotorEx feeder;
 
-    public static double goalRPM = 3700;
+    public static double goalRPM = 2750;
     public static double rpmTolerance = 25;
     public static long feedTime_ms = 2500L;
     public static long spinUpTimeout_ms = 2000L;

@@ -33,7 +33,7 @@ public class Flywheel implements Subsystem{
     public static double idlePercent = 0.5;
 
     private double bareTicksPerRev  = 28.0;
-    private double gearRatio = 48.0/30.0;
+    private double gearRatio = 30.0/48;
     private double ticksPerRev = bareTicksPerRev * gearRatio;
     private double ticksPerSecond = (ticksPerRev * goalRPM) / 60.0;
 

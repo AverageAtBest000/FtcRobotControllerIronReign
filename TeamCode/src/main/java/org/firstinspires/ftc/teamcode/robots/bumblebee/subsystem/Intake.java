@@ -23,7 +23,7 @@ public class Intake implements Subsystem{
     public static double goalRPM = 1400;
 
     private double bareTicksPerRev  = 28.0;
-    private double gearRatio = 3.0/1.0;
+    private double gearRatio = 1.0/3.0;
     private double ticksPerRev = bareTicksPerRev * gearRatio;
     private double ticksPerSecond = (ticksPerRev * goalRPM) / 60.0;
 
@@ -50,7 +50,7 @@ public class Intake implements Subsystem{
         if(usingSlave){
             intakeSlave = hardwareMap.get(DcMotorEx.class, "intakeSlave");
             intakeSlave.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+            intakeSlave.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         }
     }
 

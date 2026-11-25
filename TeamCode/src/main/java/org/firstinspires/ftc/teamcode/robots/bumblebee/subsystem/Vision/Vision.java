@@ -31,8 +31,8 @@ public class Vision implements Subsystem {
 
   
     // ==================== SERVO STATES ====================
-    public static int tiltUpTicks = 0;
-    public static int tiltDownTicks = 0;
+    private static final int tiltUpTicks = 0;
+    private static final int tiltDownTicks = 0;
     private static final double tiltDownDegrees = 0.0;
     private static final double tiltUpDegrees = 0.0;
     public static long timeToSettle_ms = 500L;
@@ -136,6 +136,7 @@ public class Vision implements Subsystem {
 
     @Override
     public void calc(Canvas fieldOverlay) {
+
 
         if(pipelineRequested && !tiltPending  && System.nanoTime()/1_000_000 - switchRequested_ms >= timeToSettle_ms){
             if(limeLight.pipelineSwitch(requestedPipeline.id)){

@@ -27,7 +27,7 @@ public class HiveTracker{
     HiveState candidateState;
     private long startTime_ms = System.nanoTime() / 1_000_000;
     public static long timeThreshold_ms = 500L;
-    public static long lastSeen_ms = 0L;
+    public long lastSeen_ms = 0L;
     public static double upThreshold = -0.2;
     public static double downThreshold = 0.2;
 

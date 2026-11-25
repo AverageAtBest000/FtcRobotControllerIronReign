@@ -31,7 +31,8 @@ public class DriverControls {
         double strafe = gamepad1.left_stick_x;
         double turn = gamepad1.right_stick_x;
 
-        robot.driveTrain.drive(forward, strafe, turn);
+        if(robot.driveTrain.isRobotCentric) robot.driveTrain.drive(forward, strafe, turn);
+        else robot.driveTrain.driveFieldCentric(forward, strafe, turn);
     }
 
     public void handleIntake(){

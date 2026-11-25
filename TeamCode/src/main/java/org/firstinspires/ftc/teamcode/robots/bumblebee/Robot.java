@@ -20,7 +20,7 @@ import java.util.Map;
 public class Robot implements Subsystem{
 
     public final DriveTrain driveTrain;
-    private boolean driveFieldCentric = false; 
+    private boolean driveRobotCentric = true;
 
     public final Intake intake;
     private boolean hasSlave = false;
@@ -40,7 +40,7 @@ public class Robot implements Subsystem{
     public Robot(HardwareMap hardwareMap){
 
         intake = new Intake(hardwareMap, hasSlave);
-        driveTrain = new DriveTrain(hardwareMap, Pose, driveFieldCentric);
+        driveTrain = new DriveTrain(hardwareMap, Pose, driveRobotCentric);
         flywheel = new Flywheel(hardwareMap);
         ramp = new Ramp(hardwareMap);
 

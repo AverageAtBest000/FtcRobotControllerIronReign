@@ -28,11 +28,11 @@ import java.util.logging.Handler;
 
 @Config(value = "BumbleBee_DriveTrain")
 public class DriveTrain implements Subsystem {
-    //  SET TO FALSE FOR ROBOT CENTRIC
-    public boolean fieldCentric;  
+    //  SET TO FALSE FOR FIELD CENTRIC
+    public boolean isRobotCentric;
 
     // ======================= DRIVE DECLARATIONS =====================================
-    private MecanumDrive mecanumDrive;
+    private final MecanumDrive mecanumDrive;
     private PoseVelocity2d powers = new PoseVelocity2d( new Vector2d(0,0), 0);
 
     private double forward;
@@ -49,9 +49,9 @@ public class DriveTrain implements Subsystem {
     Behavior behavior = Behavior.MANUAL;
 
 
-    public DriveTrain(HardwareMap hardwareMap, Pose2d startPos, boolean fieldCentric){
+    public DriveTrain(HardwareMap hardwareMap, Pose2d startPos, boolean isRobotCentric){
         mecanumDrive = new MecanumDrive(hardwareMap, startPos);
-        this.fieldCentric = fieldCentric; 
+        this.isRobotCentric = isRobotCentric;
     }
 
     @Override
@@ -106,6 +106,22 @@ public class DriveTrain implements Subsystem {
     public void drive(double forward, double strafe, double turn){
         this.forward = forward;
         this.strafe = strafe;
+        this.turn = turn;
+    }
+
+    public void driveFieldCentric(double forward, double strafe, double turn) {
+
+        double theta = Math.atan2(forward, strafe);
+        double r = Math.hypot(strafe, forward);
+
+        theta = AngleUnit.normalizeRadians(theta -
+                getPose().heading.toDouble());
+
+        double newForward = r * Math.sin(theta);
+        double newStrafe = r * Math.cos(theta);
+
+        this.forward = newForward;
+        this.strafe = newStrafe;
         this.turn = turn;
     }
 
